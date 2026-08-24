@@ -1325,11 +1325,11 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> int:
     global API_KEY  # noqa: PLW0603 — CLI overrides env
+    default_host = os.environ.get("WATERMARKS_SERVER_HOST", "0.0.0.0" if os.environ.get("PORT") or os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RENDER") else "127.0.0.1")
+    default_port = int(os.environ.get("PORT") or os.environ.get("WATERMARKS_SERVER_PORT", "8765"))
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--host", default=os.environ.get("WATERMARKS_SERVER_HOST", "127.0.0.1"))
-    p.add_argument(
-        "--port", type=int, default=int(os.environ.get("WATERMARKS_SERVER_PORT", "8765"))
-    )
+    p.add_argument("--host", default=default_host)
+    p.add_argument("--port", type=int, default=default_port)
     p.add_argument("--api-key", default=API_KEY, help="require this bearer token (default: none)")
     p.add_argument("-V", "--version", action="store_true", help="print version and exit")
     args = p.parse_args()
