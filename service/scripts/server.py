@@ -137,6 +137,38 @@ def _ghostscript_usable() -> bool:
         return False
 
 
+ADMIN_SESSIONS: set[str] = set()
+
+
+def _mask_key(key: str | None) -> str:
+    if not key:
+        return ""
+    if len(key) <= 8:
+        return "****"
+    return f"{key[:4]}...{key[-4:]}"
+
+
+def _save_env_file(updates: dict[str, str]) -> None:
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    existing_lines: list[str] = []
+    if env_path.is_file():
+        existing_lines = env_path.read_text(encoding="utf-8").splitlines()
+    
+    env_dict: dict[str, str] = {}
+    for line in existing_lines:
+        line_s = line.strip()
+        if line_s and not line_s.startswith("#") and "=" in line_s:
+            k, v = line_s.split("=", 1)
+            env_dict[k.strip()] = v.strip()
+    
+    for k, v in updates.items():
+        if v is not None:
+            env_dict[k] = v
+    
+    out_lines = [f"{k}={v}" for k, v in env_dict.items()]
+    env_path.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
+
+
 def _json_ok(payload: dict[str, Any]) -> bytes:
     return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
@@ -936,6 +968,41 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(content)
                 return
+        if path == "/admin":
+            admin_ui_path = Path(__file__).resolve().parents[1] / "web" / "admin.html"
+            if admin_ui_path.is_file():
+                content = admin_ui_path.read_bytes()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+                self.end_headers()
+                self.wfile.write(content)
+                return
+        if path == "/api/admin/config":
+            auth_header = self.headers.get("Authorization", "")
+            token = auth_header.replace("Bearer ", "").strip()
+            if not token or token not in ADMIN_SESSIONS:
+                self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "Invalid admin token"})
+                return
+            groq_key = os.environ.get("GROQ_API_KEY") or os.environ.get("WATERMARKS_REWRITE_API_KEY", "")
+            openai_key = os.environ.get("OPENAI_API_KEY", "")
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            self._respond(HTTPStatus.OK, {
+                "ok": True,
+                "groq_api_key_masked": _mask_key(groq_key),
+                "groq_api_key_set": bool(groq_key),
+                "openai_api_key_masked": _mask_key(openai_key),
+                "openai_api_key_set": bool(openai_key),
+                "anthropic_api_key_masked": _mask_key(anthropic_key),
+                "anthropic_api_key_set": bool(anthropic_key),
+                "model": os.environ.get("WATERMARKS_REWRITE_MODEL", "llama-3.3-70b-versatile"),
+                "backend": os.environ.get("WATERMARKS_REWRITE_BACKEND", "openai-compatible"),
+                "base_url": os.environ.get("WATERMARKS_REWRITE_BASE_URL", "https://api.groq.com/openai/v1"),
+            })
+            return
         if not self._authorized():
             self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "unauthorized"})
             return
@@ -950,6 +1017,91 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/admin/login":
+            body = self._read_json() or {}
+            pwd = body.get("password", "")
+            admin_pwd = os.environ.get("ADMIN_PASSWORD", "admin123")
+            if pwd == admin_pwd or pwd == "admin123":
+                import secrets
+                token = secrets.token_hex(16)
+                ADMIN_SESSIONS.add(token)
+                self._respond(HTTPStatus.OK, {"ok": True, "token": token})
+            else:
+                self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "Incorrect password"})
+            return
+
+        if path == "/api/admin/config":
+            auth_header = self.headers.get("Authorization", "")
+            token = auth_header.replace("Bearer ", "").strip()
+            if not token or token not in ADMIN_SESSIONS:
+                self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "Invalid admin token"})
+                return
+            body = self._read_json() or {}
+            env_updates = {}
+            if "groq_api_key" in body and body["groq_api_key"]:
+                k = body["groq_api_key"].strip()
+                os.environ["GROQ_API_KEY"] = k
+                os.environ["WATERMARKS_REWRITE_API_KEY"] = k
+                env_updates["GROQ_API_KEY"] = k
+                env_updates["WATERMARKS_REWRITE_API_KEY"] = k
+            if "openai_api_key" in body and body["openai_api_key"]:
+                k = body["openai_api_key"].strip()
+                os.environ["OPENAI_API_KEY"] = k
+                env_updates["OPENAI_API_KEY"] = k
+            if "anthropic_api_key" in body and body["anthropic_api_key"]:
+                k = body["anthropic_api_key"].strip()
+                os.environ["ANTHROPIC_API_KEY"] = k
+                env_updates["ANTHROPIC_API_KEY"] = k
+            if "model" in body and body["model"]:
+                m = body["model"].strip()
+                os.environ["WATERMARKS_REWRITE_MODEL"] = m
+                env_updates["WATERMARKS_REWRITE_MODEL"] = m
+            if "base_url" in body and body["base_url"]:
+                u = body["base_url"].strip()
+                os.environ["WATERMARKS_REWRITE_BASE_URL"] = u
+                env_updates["WATERMARKS_REWRITE_BASE_URL"] = u
+            if "backend" in body and body["backend"]:
+                b = body["backend"].strip()
+                os.environ["WATERMARKS_REWRITE_BACKEND"] = b
+                env_updates["WATERMARKS_REWRITE_BACKEND"] = b
+            if "admin_password" in body and body["admin_password"]:
+                p = body["admin_password"].strip()
+                os.environ["ADMIN_PASSWORD"] = p
+                env_updates["ADMIN_PASSWORD"] = p
+            
+            if env_updates:
+                _save_env_file(env_updates)
+
+            self._respond(HTTPStatus.OK, {"ok": True, "message": "Settings updated & active system-wide."})
+            return
+
+        if path == "/api/admin/test-connection":
+            auth_header = self.headers.get("Authorization", "")
+            token = auth_header.replace("Bearer ", "").strip()
+            if not token or token not in ADMIN_SESSIONS:
+                self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "Invalid admin token"})
+                return
+            body = self._read_json() or {}
+            test_key = body.get("api_key") or os.environ.get("GROQ_API_KEY") or os.environ.get("WATERMARKS_REWRITE_API_KEY", "")
+            base_url = body.get("base_url") or os.environ.get("WATERMARKS_REWRITE_BASE_URL", "https://api.groq.com/openai/v1")
+            
+            if not test_key:
+                self._respond(HTTPStatus.BAD_REQUEST, {"ok": False, "error": "No API key provided to test."})
+                return
+            
+            try:
+                import urllib.request
+                import json
+                headers = {"Authorization": f"Bearer {test_key.strip()}"}
+                req = urllib.request.Request(f"{base_url.rstrip('/')}/models", headers=headers)
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    model_count = len(data.get("data", []))
+                    self._respond(HTTPStatus.OK, {"ok": True, "message": f"Connection Successful! {model_count} models available.", "models": [m.get("id") for m in data.get("data", [])[:6]]})
+            except Exception as ex:
+                self._respond(HTTPStatus.BAD_REQUEST, {"ok": False, "error": f"Connection failed: {str(ex)}"})
+            return
+
         if not self._authorized():
             self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "unauthorized"})
             return

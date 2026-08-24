@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin Dashboard — Documents AI & LLM Engine</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 40'><path d='M4 0C1.8 0 0 1.8 0 4v32c0 2.2 1.8 4 4 4h26c2.2 0 4-1.8 4-4V12L22 0H4z' fill='%230062FF'/><path d='M22 0l12 12h-9c-1.7 0-3-1.3-3-3V0z' fill='%235495FF'/><path d='M9 22c.8 4.5 4.5 7.5 8 7.5s7.2-3 8-7.5' stroke='white' stroke-width='3.2' stroke-linecap='round' fill='none'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(22, 30, 49, 0.75);
+      --border-card: rgba(255, 255, 255, 0.1);
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent-purple: #a855f7;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* LOGIN MODAL CARD */
+    #login-view {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.15);
+      text-align: center;
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .brand-logo-glow {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 18px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+    }
+
+    .login-title {
+      font-family: var(--font-heading);
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+    .login-title span {
+      background: linear-gradient(135deg, #38bdf8, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .login-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .admin-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: #ffffff;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .admin-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .btn-toggle-eye {
+      position: absolute;
+      right: 0.75rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.25rem;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+    }
+
+    /* DASHBOARD VIEW */
+    #dashboard-view {
+      display: none;
+      width: 100%;
+      max-width: 860px;
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .dash-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .dash-title {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .dash-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+      padding: 0.3rem 0.65rem;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-dot-pulse {
+      width: 7px;
+      height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    .dash-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-subtle {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-card);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-subtle:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .dash-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .dash-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.85rem;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .badge-active { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-none { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .btn-test {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-test:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+    }
+
+    .toast-msg {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .toast-success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
+    .toast-error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= 1. PASSWORD AUTH GATE ================= -->
+  <div id="login-view">
+    <div class="brand-logo-glow">
+      <svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H30C32.2091 40 34 38.2091 34 36V12L22 0H4Z" fill="#38BDF8"/>
+        <path d="M22 0L34 12H25C23.3431 12 22 10.6569 22 9V0Z" fill="#818CF8"/>
+        <path d="M9 22C9.8 26.5 13.5 29.5 17 29.5C20.5 29.5 24.2 26.5 25 22" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="login-title">Documents <span>Admin</span></h1>
+    <p class="login-subtitle">Enter admin password to manage Groq & LLM credentials</p>
+
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label" for="admin-password-input">Admin Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="admin-password-input" class="admin-input" placeholder="Enter password (default: admin123)" required autofocus>
+          <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('admin-password-input')">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" id="btn-login-submit">
+        <span>🔐 Unlock Admin Console</span>
+      </button>
+      <div id="login-toast" class="toast-msg toast-error"></div>
+    </form>
+  </div>
+
+  <!-- ================= 2. ADMIN DASHBOARD ================= -->
+  <div id="dashboard-view">
+    <div class="dashboard-header">
+      <div class="dash-brand">
+        <div class="dash-title">⚙️ Documents Engine Admin</div>
+        <div class="dash-status-badge">
+          <span class="status-dot-pulse"></span> Server Live (Port 8765)
+        </div>
+      </div>
+      <div class="dash-actions">
+        <a href="/" target="_blank" class="btn-subtle">🌐 Open User Studio ↗</a>
+        <button onclick="handleLogout()" class="btn-subtle">🔒 Logout</button>
+      </div>
+    </div>
+
+    <!-- CARD 1: GROQ AI CONFIGURATION -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title">
+          <span>⚡ Groq AI Engine Credentials</span>
+          <span class="card-badge badge-active" id="badge-groq-status">Checking...</span>
+        </div>
+        <button class="btn-test" onclick="testGroqConnection()">⚡ Test Connection</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-groq-key">Groq API Key (gsk_...)</label>
+        <div class="input-wrapper">
+          <input type="password" id="cfg-groq-key" class="admin-input" style="font-family: var(--font-mono);" placeholder="Paste Groq API Key (gsk_...)">
+          <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('cfg-groq-key')">👁️</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="cfg-groq-model">Active Groq Model</label>
+          <select id="cfg-groq-model" class="admin-input" style="cursor: pointer;">
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Recommended / Fast & Deep)</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Ultra-Fast Lightweight)</option>
+            <option value="mixtral-8x7b-32768">mixtral-8x7b-32768 (High-Context Engine)</option>
+            <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b (Deep Reasoning)</option>
+            <option value="gemma2-9b-it">gemma2-9b-it (Google Gemma)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfg-groq-url">Groq Base URL</label>
+          <input type="text" id="cfg-groq-url" class="admin-input" value="https://api.groq.com/openai/v1" style="font-family: var(--font-mono);">
+        </div>
+      </div>
+
+      <div id="test-toast" class="toast-msg"></div>
+    </div>
+
+    <!-- CARD 2: SECONDARY LLM PROVIDERS -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title">
+          <span>🤖 Secondary LLM Providers (OpenAI, Anthropic, Custom)</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="cfg-openai-key">OpenAI API Key (sk-...)</label>
+          <div class="input-wrapper">
+            <input type="password" id="cfg-openai-key" class="admin-input" placeholder="Paste OpenAI Key (optional)">
+            <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('cfg-openai-key')">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfg-anthropic-key">Anthropic API Key (sk-ant-...)</label>
+          <div class="input-wrapper">
+            <input type="password" id="cfg-anthropic-key" class="admin-input" placeholder="Paste Anthropic Key (optional)">
+            <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('cfg-anthropic-key')">👁️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3: ADMIN SECURITY -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title">
+          <span>🛡️ Admin Panel Password</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="cfg-new-password">Change Admin Password (Leave blank to keep current)</label>
+        <div class="input-wrapper">
+          <input type="password" id="cfg-new-password" class="admin-input" placeholder="New admin password">
+          <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('cfg-new-password')">👁️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button class="btn-primary" style="flex: 1; padding: 1rem;" onclick="saveAdminConfig()">
+        <span>💾 Save & Apply System-Wide in Real-Time</span>
+      </button>
+    </div>
+    <div id="save-toast" class="toast-msg"></div>
+  </div>
+
+  <script>
+    let adminToken = localStorage.getItem('doc_admin_token') || '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (adminToken) {
+        loadAdminConfig();
+      }
+    });
+
+    function togglePasswordVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('admin-password-input').value;
+      const toast = document.getElementById('login-toast');
+      toast.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if (data.ok && data.token) {
+          adminToken = data.token;
+          localStorage.setItem('doc_admin_token', adminToken);
+          loadAdminConfig();
+        } else {
+          toast.className = 'toast-msg toast-error';
+          toast.innerText = `❌ ${data.error || 'Incorrect password'}`;
+          toast.style.display = 'flex';
+        }
+      } catch (err) {
+        toast.className = 'toast-msg toast-error';
+        toast.innerText = `❌ Server connection error: ${err.message}`;
+        toast.style.display = 'flex';
+      }
+    }
+
+    function handleLogout() {
+      adminToken = '';
+      localStorage.removeItem('doc_admin_token');
+      document.getElementById('dashboard-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'block';
+    }
+
+    async function loadAdminConfig() {
+      try {
+        const res = await fetch('/api/admin/config', {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('login-view').style.display = 'none';
+          document.getElementById('dashboard-view').style.display = 'block';
+
+          const badge = document.getElementById('badge-groq-status');
+          if (data.groq_api_key_set) {
+            badge.className = 'card-badge badge-active';
+            badge.innerText = `✓ Active (${data.groq_api_key_masked})`;
+          } else {
+            badge.className = 'card-badge badge-none';
+            badge.innerText = '⚠️ No Key Set (Local Mode Active)';
+          }
+
+          if (data.model) document.getElementById('cfg-groq-model').value = data.model;
+          if (data.base_url) document.getElementById('cfg-groq-url').value = data.base_url;
+        } else {
+          handleLogout();
+        }
+      } catch (err) {
+        handleLogout();
+      }
+    }
+
+    async function saveAdminConfig() {
+      const groqKey = document.getElementById('cfg-groq-key').value.trim();
+      const openaiKey = document.getElementById('cfg-openai-key').value.trim();
+      const anthropicKey = document.getElementById('cfg-anthropic-key').value.trim();
+      const model = document.getElementById('cfg-groq-model').value.trim();
+      const baseUrl = document.getElementById('cfg-groq-url').value.trim();
+      const newPwd = document.getElementById('cfg-new-password').value.trim();
+      const toast = document.getElementById('save-toast');
+
+      const payload = {
+        model: model,
+        base_url: baseUrl,
+        backend: 'openai-compatible'
+      };
+      if (groqKey) payload.groq_api_key = groqKey;
+      if (openaiKey) payload.openai_api_key = openaiKey;
+      if (anthropicKey) payload.anthropic_api_key = anthropicKey;
+      if (newPwd) payload.admin_password = newPwd;
+
+      try {
+        const res = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          toast.className = 'toast-msg toast-success';
+          toast.innerHTML = `✓ <strong>Saved & Applied!</strong> All AI, Grammar & Humanize requests now use the updated credentials.`;
+          toast.style.display = 'flex';
+          loadAdminConfig();
+          setTimeout(() => { toast.style.display = 'none'; }, 4500);
+        } else {
+          toast.className = 'toast-msg toast-error';
+          toast.innerText = `❌ Error: ${data.error || 'Failed to save'}`;
+          toast.style.display = 'flex';
+        }
+      } catch (err) {
+        toast.className = 'toast-msg toast-error';
+        toast.innerText = `❌ Network Error: ${err.message}`;
+        toast.style.display = 'flex';
+      }
+    }
+
+    async function testGroqConnection() {
+      const groqKey = document.getElementById('cfg-groq-key').value.trim();
+      const baseUrl = document.getElementById('cfg-groq-url').value.trim();
+      const toast = document.getElementById('test-toast');
+
+      toast.className = 'toast-msg toast-success';
+      toast.innerText = '⚡ Connecting to Groq AI endpoint...';
+      toast.style.display = 'flex';
+
+      try {
+        const res = await fetch('/api/admin/test-connection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminToken}`
+          },
+          body: JSON.stringify({ api_key: groqKey, base_url: baseUrl })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          toast.className = 'toast-msg toast-success';
+          toast.innerHTML = `✓ <strong>${data.message}</strong>`;
+        } else {
+          toast.className = 'toast-msg toast-error';
+          toast.innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        toast.className = 'toast-msg toast-error';
+        toast.innerText = `❌ Test failed: ${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
