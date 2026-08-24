@@ -48,12 +48,31 @@ def _reconfigure_stream(stream: Any, errors: str) -> None:
             reconfigure(encoding="utf-8", errors=errors)
 
 
+def _load_dotenv() -> None:
+    for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env"):
+        if candidate.is_file():
+            try:
+                for line in candidate.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+                break
+            except Exception:
+                pass
+
+
 def _configure_stdio() -> None:
     _reconfigure_stream(sys.stdin, "surrogateescape")
     _reconfigure_stream(sys.stdout, "backslashreplace")
     _reconfigure_stream(sys.stderr, "backslashreplace")
 
 
+_load_dotenv()
 _configure_stdio()
 
 

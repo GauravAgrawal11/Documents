@@ -31,7 +31,10 @@
 !/Makefile
 !/pytest.ini
 !/README.md
+!/requirements.txt
 !/requirements-dev.txt
+!/DEPLOYMENT.md
+!/start-server.bat
 !/ruff.toml
 !/SECURITY.md
 

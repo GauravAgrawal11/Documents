@@ -49,7 +49,20 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Auto-load .env from repository root if present
+_env_file = Path(__file__).resolve().parent.parent.parent / ".env"
+if _env_file.exists():
+    try:
+        with open(_env_file, "r", encoding="utf-8") as _f:
+            for _l in _f:
+                _l = _l.strip()
+                if _l and not _l.startswith("#") and "=" in _l:
+                    _k, _v = _l.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip()
+                    if _k and _k not in os.environ and _v:
+                        os.environ[_k] = _v
+    except Exception:
+        pass
 
 from av_meta import clean_av, inspect_av
 from common import (
@@ -66,6 +79,8 @@ from image_meta import clean_image, inspect_image, run_synthid_score
 from score_stylometry import score_text_stylometry
 from text_detectors import detector_status, run_all_text_detectors, run_text_detectors
 from text_unicode import clean_text, inspect_text
+from ai_detector import analyze_ai_probability
+from document_tools import extract_text, create_pdf, create_docx, merge_files
 
 VERSION = os.environ.get("WATERMARKS_SERVER_VERSION", "dev")
 
@@ -595,12 +610,16 @@ def _tmp_path(tmpdir: Path, *parts: str) -> Path:
 
 
 def _decode_input(body: dict[str, Any]) -> tuple[bytes, str]:
-    raw = body.get("file")
-    if not isinstance(raw, str):
-        raise ValueError("missing string field 'file' (base64-encoded bytes)")
     name = body.get("name")
     if name is not None and not isinstance(name, str):
         raise ValueError("'name' must be a string")
+
+    if "text" in body and isinstance(body["text"], str):
+        return body["text"].encode("utf-8"), _safe_name(name or "text.txt")
+
+    raw = body.get("file")
+    if not isinstance(raw, str):
+        raise ValueError("missing string field 'file' (base64-encoded bytes) or 'text'")
     try:
         data = base64.b64decode(raw, validate=True)
     except (binascii.Error, ValueError):
@@ -904,6 +923,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        if path in ("/", "/ui"):
+            ui_path = Path(__file__).resolve().parents[1] / "web" / "index.html"
+            if ui_path.is_file():
+                content = ui_path.read_bytes()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+                self.end_headers()
+                self.wfile.write(content)
+                return
         if not self._authorized():
             self._respond(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "unauthorized"})
             return
@@ -928,6 +960,12 @@ class Handler(BaseHTTPRequestHandler):
             "/inspect/batch",
             "/detect/batch",
             "/clean/batch",
+            "/rewrite",
+            "/extract",
+            "/export/docx",
+            "/export/pdf",
+            "/analyze",
+            "/merge",
         ):
             self._respond(HTTPStatus.NOT_FOUND, {"ok": False, "error": "not found"})
             return
@@ -941,7 +979,119 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         try:
-            if path == "/inspect/batch":
+            if path == "/merge":
+                files = body.get("files", [])
+                from document_tools import merge_files
+                res = merge_files(files)
+                self._respond(HTTPStatus.OK, res)
+            elif path == "/analyze":
+                text = body.get("text", "")
+                report = inspect_text(text)
+                wm_count = getattr(report, "suspicious_total", len(getattr(report, "hits", [])))
+                ai_data = analyze_ai_probability(text, wm_count)
+                self._respond(HTTPStatus.OK, ai_data)
+            elif path == "/extract":
+                data, name = _decode_input(body)
+                from document_tools import extract_text
+                txt = extract_text(data, name)
+                self._respond(HTTPStatus.OK, {"ok": True, "text": txt, "name": name})
+            elif path == "/export/docx":
+                txt = body.get("text", "")
+                name = body.get("name", "cleaned_document.docx")
+                if not name.lower().endswith(".docx"):
+                    name += ".docx"
+                from document_tools import create_docx
+                docx_bytes = create_docx(txt)
+                b64 = base64.b64encode(docx_bytes).decode("ascii")
+                self._respond(HTTPStatus.OK, {"ok": True, "file": b64, "name": name})
+            elif path == "/export/pdf":
+                txt = body.get("text", "")
+                name = body.get("name", "document.pdf")
+                if not name.lower().endswith(".pdf"):
+                    name += ".pdf"
+                from document_tools import create_pdf
+                pdf_bytes = create_pdf(txt, title=name)
+                b64 = base64.b64encode(pdf_bytes).decode("ascii")
+                self._respond(HTTPStatus.OK, {"ok": True, "file": b64, "name": name})
+            elif path == "/rewrite":
+                text = body.get("text", "")
+                strength = body.get("strength", "paraphrase")
+                if not text:
+                    self._respond(HTTPStatus.BAD_REQUEST, {"ok": False, "error": "missing text"})
+                    return
+                try:
+                    from rewrite_text import rewrite, local_smart_humanize
+                    from grammar_tool import analyze_grammar_local
+                    backend = os.environ.get("WATERMARKS_REWRITE_BACKEND", "openai-compatible")
+                    model = os.environ.get("WATERMARKS_REWRITE_MODEL", "llama-3.3-70b-versatile")
+                    base_url = os.environ.get("WATERMARKS_REWRITE_BASE_URL", "https://api.groq.com/openai/v1")
+                    api_key = (
+                        body.get("api_key")
+                        or os.environ.get("WATERMARKS_REWRITE_API_KEY")
+                        or os.environ.get("GROQ_API_KEY")
+                        or os.environ.get("OPENAI_API_KEY")
+                        or os.environ.get("ANTHROPIC_API_KEY")
+                        or ""
+                    ).strip()
+                    allow_remote = True
+
+                    if strength in ("grammar", "grammar_check"):
+                        output_text, suggestions = analyze_grammar_local(text)
+                        if api_key:
+                            try:
+                                import urllib.request
+                                import json
+                                headers = {
+                                    "Content-Type": "application/json",
+                                    "Authorization": f"Bearer {api_key}"
+                                }
+                                prompt = (
+                                    "You are a professional grammar and spelling editor. Analyze the user's text and return ONLY valid JSON with no markdown:\n"
+                                    "{\n"
+                                    '  "corrected_text": "the fully corrected sentence",\n'
+                                    '  "suggestions": [\n'
+                                    '    {"original": "mistake", "suggestion": "fix", "type": "Grammar/Spelling", "reason": "why"}\n'
+                                    '  ]\n'
+                                    "}\n"
+                                    f"Text: {text}"
+                                )
+                                payload = {
+                                    "model": model,
+                                    "messages": [
+                                        {"role": "system", "content": "You are a grammar correction tool that responds ONLY in raw JSON."},
+                                        {"role": "user", "content": prompt}
+                                    ],
+                                    "temperature": 0.1,
+                                    "response_format": {"type": "json_object"}
+                                }
+                                req = urllib.request.Request(
+                                    f"{base_url.rstrip('/')}/chat/completions",
+                                    data=json.dumps(payload).encode("utf-8"),
+                                    headers=headers
+                                )
+                                with urllib.request.urlopen(req, timeout=12) as resp:
+                                    resp_data = json.loads(resp.read().decode("utf-8"))
+                                    content_str = resp_data["choices"][0]["message"]["content"]
+                                    parsed = json.loads(content_str)
+                                    if "corrected_text" in parsed:
+                                        output_text = parsed["corrected_text"]
+                                        if parsed.get("suggestions"):
+                                            suggestions = parsed["suggestions"]
+                            except Exception as ex:
+                                eprint(f"Cloud grammar notice: {ex}, used local engine")
+                        self._respond(HTTPStatus.OK, {"ok": True, "rewritten": output_text, "suggestions": suggestions[:15], "info": {"mode": "grammar"}})
+                        return
+                except Exception as e:
+                    from rewrite_text import local_smart_humanize
+                    from grammar_tool import analyze_grammar_local
+                    if strength in ("grammar", "grammar_check"):
+                        output_text, suggestions = analyze_grammar_local(text)
+                        self._respond(HTTPStatus.OK, {"ok": True, "rewritten": output_text, "suggestions": suggestions, "info": {"mode": "fallback-grammar", "error": str(e)}})
+                        return
+                    output_text = local_smart_humanize(text)
+                    self._respond(HTTPStatus.OK, {"ok": True, "rewritten": output_text, "suggestions": [], "info": {"mode": "local-fallback", "error": str(e)}})
+                return
+            elif path == "/inspect/batch":
                 self._handle_inspect_batch(body)
             elif path == "/detect/batch":
                 self._handle_detect_batch(body)
@@ -1045,7 +1195,14 @@ def main() -> int:
     else:
         eprint("warning: no API key set — only bind to loopback or a trusted network")
 
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    try:
+        server = ThreadingHTTPServer((args.host, args.port), Handler)
+    except OSError as e:
+        if getattr(e, "winerror", None) == 10048 or "Address already in use" in str(e) or getattr(e, "errno", None) == 98:
+            eprint(f"\n[INFO] Server is ALREADY RUNNING on http://{args.host}:{args.port}!")
+            eprint(f"You can open it now in your browser at: http://localhost:{args.port}\n")
+            return 0
+        raise
     eprint(f"watermarks-remover service {VERSION} on http://{args.host}:{args.port}")
     try:
         server.serve_forever()

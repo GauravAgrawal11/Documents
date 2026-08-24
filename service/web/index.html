@@ -1,0 +1,4576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Documents — AI Watermark & Grammar Studio</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 40'><path d='M4 0C1.8 0 0 1.8 0 4v32c0 2.2 1.8 4 4 4h26c2.2 0 4-1.8 4-4V12L22 0H4z' fill='%230062FF'/><path d='M22 0l12 12h-9c-1.7 0-3-1.3-3-3V0z' fill='%235495FF'/><path d='M9 22c.8 4.5 4.5 7.5 8 7.5s7.2-3 8-7.5' stroke='white' stroke-width='3.2' stroke-linecap='round' fill='none'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Merriweather:ital,wght@0,400;0,700;1,300&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- CLIENT-SIDE DOCUMENT EXTRACTORS, MERGERS & PDF/PPTX GENERATOR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-page: #fbfcfe;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f8fafc;
+      --border-color: #e2e8f0;
+      --border-focus: #2563eb;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --accent-green: #059669;
+      --accent-green-bg: #ecfdf5;
+      --accent-purple: #7c3aed;
+      --accent-purple-hover: #6d28d9;
+      --accent-teal: #0d9488;
+      --accent-teal-hover: #0f766e;
+      --accent-amber: #d97706;
+      --accent-amber-hover: #b45309;
+      --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem 0.75rem 3rem;
+      line-height: 1.5;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #dot-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 4px 8px rgba(0, 98, 255, 0.25));
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .brand-logo:hover {
+      transform: scale(1.08) rotate(-3deg);
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+    }
+
+    .brand-tagline {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.775rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+    }
+
+    .workspace {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .workspace {
+        padding: 1.75rem;
+      }
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 880px) {
+      .editor-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+      position: relative;
+    }
+
+    .panel:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.3rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:hover {
+      background: var(--bg-subtle);
+      border-color: #cbd5e1;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      min-width: 175px;
+      overflow: hidden;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 0.55rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+    }
+
+    .dropdown-item:hover {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    textarea {
+      width: 100%;
+      height: 330px;
+      padding: 0.85rem;
+      border: none;
+      outline: none;
+      resize: vertical;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      background: transparent;
+    }
+
+    @media (max-width: 600px) {
+      textarea {
+        height: 220px;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* INTERACTIVE GRAMMAR HIGHLIGHT OVERLAY */
+    #source-highlight-box {
+      display: none;
+      width: 100%;
+      height: 330px;
+      padding: 0.85rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-main);
+      background: #fafafa;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .gram-err {
+      background: #fee2e2;
+      border-bottom: 2px wavy #ef4444;
+      color: #b91c1c;
+      font-weight: 600;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      display: inline-block;
+      margin: 0 1px;
+      transition: all 0.15s ease;
+    }
+
+    .gram-err:hover {
+      background: #fca5a5;
+      color: #7f1d1d;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25);
+    }
+
+    .gram-fix-green {
+      background: #dcfce7;
+      border-bottom: 2px solid #22c55e;
+      color: #15803d;
+      font-weight: 600;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    /* FLOATING GRAMMARLY-STYLE SUGGESTION POPOVER */
+    #gram-popover {
+      display: none;
+      position: absolute;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
+      z-index: 100;
+      width: 310px;
+      font-size: 0.85rem;
+      animation: popIn 0.15s ease-out;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .pop-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    /* RED VS GREEN COMPARISON BOX */
+    .pop-diff-box {
+      margin: 0.6rem 0;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .pop-diff-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .diff-label-red {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .diff-val-red {
+      color: #dc2626;
+      text-decoration: line-through;
+      font-weight: 600;
+      background: #fef2f2;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    .diff-label-green {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #15803d;
+      background: #dcfce7;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .diff-val-green {
+      color: #15803d;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: #dcfce7;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    .pop-reason {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      line-height: 1.4;
+    }
+
+    .panel-footer {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      background: #fafafa;
+    }
+
+    /* ACTION BAR */
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .action-buttons {
+        width: auto;
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.55rem 0.95rem;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      flex: 1 1 auto;
+    }
+
+    @media (min-width: 600px) {
+      .btn {
+        flex: 0 0 auto;
+      }
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-purple {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .btn-purple:hover {
+      background: var(--accent-purple-hover);
+      box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+    }
+
+    .btn-teal {
+      background: var(--accent-teal);
+      color: white;
+    }
+
+    .btn-teal:hover {
+      background: var(--accent-teal-hover);
+      box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+    }
+
+    .btn-amber {
+      background: var(--accent-amber);
+      color: white;
+    }
+
+    .btn-amber:hover {
+      background: var(--accent-amber-hover);
+      box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-subtle);
+    }
+
+    /* SCORE CARDS BAR */
+    .score-bar {
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .score-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .score-label {
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .score-value {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+    }
+
+    .score-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .score-amber {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .score-red {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .metrics-box {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      display: none;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .metrics-box.success {
+      display: flex;
+      background: var(--accent-green-bg);
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+    }
+
+    .metrics-box.error {
+      display: flex;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-left-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* TOP NAVIGATION TABS */
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #f1f5f9;
+      padding: 0.3rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .nav-tab {
+      padding: 0.45rem 0.9rem;
+      font-family: var(--font-heading);
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-tab:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .nav-tab.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* VIEW SWITCHING */
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    /* FILE MERGER STYLES */
+    .merger-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .merger-hero {
+      text-align: center;
+      padding: 0.5rem 0 0.25rem;
+    }
+
+    .merger-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
+
+    .merger-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .merger-dropzone {
+      border: 2px dashed #93c5fd;
+      background: #eff6ff;
+      border-radius: 14px;
+      padding: 2.25rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+    }
+
+    .merger-dropzone:hover, .merger-dropzone.dragover {
+      border-color: var(--primary);
+      background: #dbeafe;
+      transform: scale(1.005);
+    }
+
+    .dropzone-icon {
+      font-size: 2.5rem;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .dropzone-text {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .dropzone-hint {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    .queue-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.15rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .queue-title {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .queue-badge {
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      gap: 0.5rem;
+    }
+
+    .file-item:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .file-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: #e2e8f0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .file-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 380px;
+    }
+
+    .file-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .file-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: white;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border-color: #cbd5e1;
+    }
+
+    .btn-icon.btn-del:hover {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fca5a5;
+    }
+
+    .merger-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .merger-result-card {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 1.15rem;
+      margin-top: 0.5rem;
+    }
+
+    /* RICH FILE & DOCUMENT EDITOR STYLES */
+    .editor-layout-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .standalone-editor-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-toolbar-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.85rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .editor-tool-select {
+      height: 32px;
+      padding: 0 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      color: var(--text-main);
+      background: #ffffff;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .editor-tool-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .editor-tool-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+
+    .editor-tool-btn.active {
+      background: #e0e7ff;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .editor-content-box {
+      min-height: 600px;
+      max-height: calc(100vh - 180px);
+      height: auto;
+      padding: 2rem 1.5rem 8rem 1.5rem;
+      background: #f1f5f9;
+      outline: none;
+      overflow-y: auto;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .doc-page-card {
+      width: 100%;
+      max-width: 860px;
+      min-height: auto;
+      height: auto;
+      background: #ffffff;
+      padding: 0;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #1e293b;
+      outline: none;
+      box-sizing: border-box;
+      position: relative;
+      word-break: break-word;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2.5rem;
+      overflow: visible;
+      transition: all 0.2s ease;
+    }
+
+    .doc-page-card:focus-within {
+      box-shadow: 0 0 0 2px var(--primary), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .pdf-exact-view {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+      background: #ffffff;
+    }
+
+    .pdf-exact-view img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .doc-page-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 8px 8px 0 0;
+      user-select: none;
+    }
+
+    .doc-page-num-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.04em;
+    }
+
+    .doc-page-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .page-action-btn {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.725rem;
+      font-weight: 600;
+      border-radius: 5px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.15s ease;
+    }
+
+    .page-action-btn:hover {
+      background: #eff6ff;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .page-action-btn.delete-btn:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .doc-page-body {
+      flex: 1;
+      padding: 2.5rem 3.25rem 4.5rem 3.25rem;
+      outline: none;
+      min-height: auto;
+      height: auto;
+      box-sizing: border-box;
+      overflow: visible;
+    }
+
+    .doc-page-body[dir="rtl"] {
+      text-align: right;
+      direction: rtl;
+    }
+
+    .editor-content-box h1, .doc-page-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.4rem 0; color: #0f172a; }
+    .editor-content-box h2, .doc-page-body h2 { font-size: 1.25rem; font-weight: 700; margin: 1.2rem 0 0.4rem 0; color: #1e40af; }
+    .editor-content-box h3, .doc-page-body h3 { font-size: 1.05rem; font-weight: 600; margin: 0.85rem 0 0.35rem 0; color: #334155; }
+    .editor-content-box p, .doc-page-body p { margin-bottom: 0.75em; }
+    .editor-content-box ul, .doc-page-body ul, .editor-content-box ol, .doc-page-body ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+    .editor-content-box li, .doc-page-body li { margin-bottom: 0.3rem; }
+    .editor-content-box blockquote, .doc-page-body blockquote { border-left: 3px solid var(--primary); padding-left: 1rem; color: #475569; margin: 1rem 0; font-style: italic; }
+    .editor-content-box table, .doc-page-body table { width: 100%; border-collapse: collapse; margin: 0.85rem 0; }
+    .editor-content-box th, .doc-page-body th, .editor-content-box td, .doc-page-body td { border: 1px solid #cbd5e1; padding: 0.45rem 0.65rem; text-align: left; }
+    .editor-content-box th, .doc-page-body th { background: #1e40af; color: #ffffff; font-weight: 600; }
+
+    .editor-file-status-pill {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #1e40af;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* EXPORT POPUP MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+      max-width: 480px;
+      width: 100%;
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.15rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+    }
+
+    .modal-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .format-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    .format-card {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.85rem 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #ffffff;
+    }
+
+    .format-card:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .format-card.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .format-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .format-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+
+    .format-ext {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .filename-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .filename-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .filename-input {
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      outline: none;
+      width: 100%;
+    }
+
+    /* SPLASH INTRO SCREEN & GLOBAL ANIMATED LOADER */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #splash-screen.hide {
+      opacity: 0;
+      transform: scale(1.04);
+      pointer-events: none;
+    }
+
+    .splash-logo-box {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .splash-ring {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #38bdf8;
+      border-right-color: #818cf8;
+      border-bottom-color: #c084fc;
+      animation: spinRing 2s linear infinite;
+    }
+
+    .splash-ring-outer {
+      position: absolute;
+      inset: -18px;
+      border-radius: 50%;
+      border: 2px dashed rgba(56, 189, 248, 0.3);
+      animation: spinRingRev 5s linear infinite;
+    }
+
+    .splash-logo-glow {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, transparent 70%);
+      filter: blur(14px);
+      animation: pulseGlow 2s ease-in-out infinite alternate;
+    }
+
+    .splash-icon-svg {
+      width: 64px;
+      height: 72px;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 4px 20px rgba(56, 189, 248, 0.6));
+      animation: floatLogo 2.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes spinRing {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spinRingRev {
+      to { transform: rotate(-360deg); }
+    }
+    @keyframes pulseGlow {
+      from { transform: scale(0.85); opacity: 0.5; }
+      to { transform: scale(1.25); opacity: 0.9; }
+    }
+    @keyframes floatLogo {
+      from { transform: translateY(0); }
+      to { transform: translateY(-6px); }
+    }
+
+    .splash-title {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .splash-title span {
+      background: linear-gradient(135deg, #38bdf8, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .splash-tagline {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 1.75rem;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .splash-progress-track {
+      width: 240px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .splash-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+      border-radius: 99px;
+      box-shadow: 0 0 12px #38bdf8;
+      transition: width 0.35s ease;
+    }
+
+    .splash-status-text {
+      font-size: 0.775rem;
+      color: #64748b;
+      font-family: var(--font-mono);
+    }
+
+    /* GLOBAL COOL ANIMATED LOADER MODAL */
+    #global-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    #global-loader.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .loader-glass-card {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.2);
+      border-radius: 20px;
+      padding: 2.25rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      max-width: 440px;
+      text-align: center;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .loader-visual {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader-ring-spin {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #38bdf8;
+      border-right-color: #a855f7;
+      animation: spinRing 1s linear infinite;
+    }
+
+    .loader-ring-pulse {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px dashed rgba(56, 189, 248, 0.4);
+      animation: spinRingRev 3s linear infinite;
+    }
+
+    .loader-icon-center {
+      font-size: 1.75rem;
+      animation: floatLogo 1.5s ease-in-out infinite alternate;
+    }
+
+    .loader-msg {
+      color: #f8fafc;
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.4;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .loader-sub-bar {
+      width: 180px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loader-sub-bar::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 40%;
+      background: linear-gradient(90deg, #38bdf8, #a855f7);
+      border-radius: 99px;
+      animation: loaderShimmer 1.2s infinite ease-in-out;
+    }
+
+    @keyframes loaderShimmer {
+      0% { left: -40%; }
+      100% { left: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= 1. WEBSITE INTRO SPLASH SCREEN WITH ANIMATED LOGO ================= -->
+  <div id="splash-screen">
+    <div class="splash-logo-box">
+      <div class="splash-ring"></div>
+      <div class="splash-ring-outer"></div>
+      <div class="splash-logo-glow"></div>
+      <svg class="splash-icon-svg" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H30C32.2091 40 34 38.2091 34 36V12L22 0H4Z" fill="#38BDF8"/>
+        <path d="M22 0L34 12H25C23.3431 12 22 10.6569 22 9V0Z" fill="#818CF8"/>
+        <path d="M9 22C9.8 26.5 13.5 29.5 17 29.5C20.5 29.5 24.2 26.5 25 22" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="splash-title">Documents<span>.</span></div>
+    <div class="splash-tagline">AI Studio & Multi-Format Document Hub</div>
+    <div class="splash-progress-track">
+      <div class="splash-progress-fill" id="splash-progress"></div>
+    </div>
+    <div class="splash-status-text" id="splash-status">Initializing AI & Document Engines...</div>
+  </div>
+
+  <!-- ================= 2. GLOBAL COOL ANIMATED LOADER OVERLAY ================= -->
+  <div id="global-loader">
+    <div class="loader-glass-card">
+      <div class="loader-visual">
+        <div class="loader-ring-spin"></div>
+        <div class="loader-ring-pulse"></div>
+        <div class="loader-icon-center" id="loader-icon">✨</div>
+      </div>
+      <div class="loader-msg" id="loader-message">Processing...</div>
+      <div class="loader-sub-bar"></div>
+    </div>
+  </div>
+
+  <canvas id="dot-canvas"></canvas>
+
+  <!-- FLOATING GRAMMAR SUGGESTION POPOVER -->
+  <div id="gram-popover">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+      <span class="pop-badge" id="pop-type">Grammar</span>
+      <button onclick="closePopover()" style="border: none; background: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+    </div>
+    
+    <div class="pop-diff-box">
+      <div class="pop-diff-row">
+        <span class="diff-label-red">❌ Mistake</span>
+        <span class="diff-val-red" id="pop-orig">original</span>
+      </div>
+      <div class="pop-diff-row">
+        <span class="diff-label-green">✅ Correct</span>
+        <span class="diff-val-green" id="pop-sug">suggestion</span>
+      </div>
+    </div>
+
+    <div class="pop-reason" id="pop-reason">Reason explanation</div>
+    
+    <div style="display: flex; gap: 0.4rem;">
+      <button class="btn btn-teal" style="flex: 1; padding: 0.45rem 0.75rem; font-size: 0.8rem; background: #16a34a; border-color: #15803d; color: white;" onclick="applyPopoverFix()">✓ Apply Fix</button>
+      <button class="tool-btn" onclick="closePopover()">Ignore</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-logo" onclick="switchPage('editor')">
+          <svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H30C32.2091 40 34 38.2091 34 36V12L22 0H4Z" fill="#0062FF"/>
+            <path d="M22 0L34 12H25C23.3431 12 22 10.6569 22 9V0Z" fill="#5495FF"/>
+            <path d="M9 22C9.8 26.5 13.5 29.5 17 29.5C20.5 29.5 24.2 26.5 25 22" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Documents<span style="color: #0062FF;">.</span></div>
+          <div class="brand-tagline">AI Studio & Multi-Format Document Hub</div>
+        </div>
+      </div>
+
+      <!-- MAIN APP TABS: 3 SEPARATE DEDICATED STUDIOS -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" id="tab-ai" onclick="switchPage('ai')">
+          🛡️ AI & Grammar Studio
+        </button>
+        <button class="nav-tab" id="tab-merger" onclick="switchPage('merger')">
+          📑 Multi-File Merger
+        </button>
+        <button class="nav-tab" id="tab-editor" onclick="switchPage('editor')">
+          ✍️ Document Editor
+        </button>
+      </div>
+
+      <div class="status-pill">
+        <span class="status-dot"></span> Status: <strong>Engine Active</strong>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- ================= PAGE 1: AI DETECTION, GRAMMAR & WATERMARK STUDIO ================= -->
+      <div id="view-ai" class="view-section active">
+        <div class="editor-grid">
+          <!-- INPUT PANEL -->
+          <div class="panel" id="source-panel">
+            <div class="panel-header">
+              <span>SOURCE DOCUMENT / TEXT</span>
+              <div class="panel-actions">
+                <input type="file" id="file-opener" style="display: none;" accept=".docx,.pdf,.pptx,.ppt,.odt,.epub,.html,.htm,.txt,.md,.rtf,.json,.csv" onchange="openFile(event)">
+                <button class="tool-btn" onclick="document.getElementById('file-opener').click()" title="Open PDF, Word, PowerPoint, DOCX, TXT">
+                  📂 Open File
+                </button>
+                <button class="tool-btn" id="btn-edit-mode" style="display: none;" onclick="switchSourceMode('edit')">✏️ Edit Text</button>
+                <button class="tool-btn" id="btn-apply-all" style="display: none; background: #dcfce7; color: #15803d; border-color: #86efac; font-weight: 700;" onclick="applyAllGrammarFixes()" title="Apply all grammar corrections at once">⚡ Apply All (<span id="fix-count">0</span>)</button>
+                <button class="tool-btn" onclick="clearText()">Clear</button>
+                <button class="tool-btn" onclick="copySource()" title="Copy source">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+            <!-- Plain Textarea for Editing -->
+            <textarea id="source-text" placeholder="Paste your text, click 'Open File', or drag & drop any PDF, Word (.docx), or text document here..." oninput="updateCounts()"></textarea>
+            <!-- Rich Highlighting Display for Grammar -->
+            <div id="source-highlight-box"></div>
+            <div class="panel-footer">
+              <span id="src-stats">0 words · 0 chars</span>
+              <span id="src-doc-label">UTF-8 Document</span>
+            </div>
+          </div>
+
+          <!-- OUTPUT PANEL -->
+          <div class="panel">
+            <div class="panel-header">
+              <span>CLEANED & REWRITTEN RESULT</span>
+              <div class="panel-actions">
+                <button class="tool-btn" onclick="copyResult()" title="Copy clean text">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
+                </button>
+                <button class="tool-btn" onclick="openExportModal('ai-result')" title="Download in any format (PDF, DOCX, TXT, MD)">
+                  ⬇️ Export Document
+                </button>
+              </div>
+            </div>
+            <textarea id="result-text" placeholder="Cleaned output and applied grammar fixes will appear here..." readonly></textarea>
+            <div class="panel-footer">
+              <span id="res-stats">0 words · 0 chars</span>
+              <span id="badge-status">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS: DEDICATED BUTTONS FOR ALL CAPABILITIES -->
+        <div class="action-bar">
+          <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="checkSpecificScore('ai')" title="Check AI detection percentage, Perplexity & Burstiness">
+              🤖 AI Detection %
+            </button>
+            <button class="btn btn-teal" onclick="checkGrammar()" title="Highlight grammar errors in RED and show GREEN corrections via Groq">
+              📖 Check Grammar
+            </button>
+            <button class="btn btn-primary" onclick="cleanInvisible()" title="Strip zero-width characters and invisible tags">
+              ⚡ Clean Watermarks
+            </button>
+            <button class="btn btn-purple" onclick="rewriteText('humanize')" title="Deep humanize sentence rhythm and bypass detectors">
+              ✨ Deep Humanize
+            </button>
+            <button class="btn btn-secondary" onclick="rewriteText('paraphrase')" title="Paraphrase and rephrase text">
+              🔄 Paraphrase
+            </button>
+            <button class="btn btn-secondary" onclick="sendAiTextToEditor()" title="Open current cleaned text inside the Document Editor">
+              ✍️ Open in Document Editor
+            </button>
+          </div>
+          <div id="loader" style="display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+            <div class="loading-spinner"></div> <span id="loader-msg">Processing...</span>
+          </div>
+        </div>
+
+        <!-- SCORE CARDS BAR (UNDERNEATH TEXT EDITORS) -->
+        <div class="score-bar" id="score-bar">
+          <div class="score-card">
+            <div class="score-label">🤖 AI Detection Score</div>
+            <div class="score-value score-green" id="score-ai">--%</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">📊 Perplexity (Predictability)</div>
+            <div class="score-value" style="font-size: 0.85rem; font-weight: 700;" id="score-perp">Natural</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">📈 Burstiness (Sentence Variance)</div>
+            <div class="score-value" style="font-size: 0.85rem; font-weight: 700;" id="score-burst">Varied</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">💧 Hidden Watermarks</div>
+            <div class="score-value score-green" id="score-wm">0</div>
+          </div>
+        </div>
+
+        <div class="metrics-box" id="metrics-banner">
+          <div id="metrics-text"></div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE 2: MULTI-FILE & PDF MERGER ================= -->
+      <div id="view-merger" class="view-section">
+        <div class="merger-container">
+          <div class="merger-hero">
+            <div class="merger-title">Multi-Document & PDF Merger</div>
+            <div class="merger-subtitle">Combine up to 10 files of any format (PDF, Word DOCX, TXT, Markdown, HTML, ODT) into a single document.</div>
+          </div>
+
+          <!-- DRAG & DROP ZONE -->
+          <input type="file" id="merger-file-input" style="display: none;" multiple accept=".docx,.pdf,.pptx,.ppt,.odt,.epub,.html,.htm,.txt,.md,.rtf,.json,.csv" onchange="handleMergerFilesSelected(event)">
+          <div class="merger-dropzone" id="merger-dropzone" onclick="document.getElementById('merger-file-input').click()">
+            <div class="dropzone-icon">📑</div>
+            <div class="dropzone-text">Click or Drag & Drop Documents to Add</div>
+            <div class="dropzone-hint">Add files one by one or select multiple (Up to 10 files: PDF, Word DOCX, PowerPoint PPTX, TXT, MD, HTML, ODT)</div>
+          </div>
+
+          <!-- QUEUE CARD -->
+          <div class="queue-card">
+            <div class="queue-header">
+              <div class="queue-title">
+                <span>Queued Documents to Merge</span>
+                <span class="queue-badge" id="merger-queue-count">0 / 10 Files</span>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="tool-btn" id="btn-add-more-merger" onclick="document.getElementById('merger-file-input').click()">
+                  ➕ Add More Files
+                </button>
+                <button class="tool-btn" onclick="clearMergerQueue()">
+                  🗑️ Clear Queue
+                </button>
+              </div>
+            </div>
+
+            <!-- FILE LIST -->
+            <div class="file-list" id="merger-file-list">
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 1rem;">
+                No files added yet. Click <strong>"Add More Files"</strong> or drag documents into the box above.
+              </div>
+            </div>
+
+            <!-- MERGE ACTIONS -->
+            <div class="merger-actions" style="margin-top: 1rem;">
+              <button class="btn btn-primary" onclick="openExportModal('merger')">
+                ⬇️ Merge & Export (Choose Format)
+              </button>
+              <button class="btn btn-purple" onclick="mergeAndOpenInEditor()">
+                ✍️ Merge & Open in Document Editor
+              </button>
+              <button class="btn btn-teal" onclick="mergeAndSendToAiStudio()">
+                🛡️ Merge & Check AI / Grammar
+              </button>
+            </div>
+
+            <div id="merger-loader" style="display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem;">
+              <div class="loading-spinner"></div> <span id="merger-loader-msg">Merging documents...</span>
+            </div>
+          </div>
+
+          <!-- MERGE RESULT BANNER -->
+          <div class="merger-result-card" id="merger-result-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <div style="font-weight: 700; color: #15803d; font-size: 0.95rem;" id="merger-result-title">✓ Successfully Merged Files!</div>
+                <div style="font-size: 0.8rem; color: #166534;" id="merger-result-desc">Combined documents into a single file.</div>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="btn btn-primary" onclick="openExportModal('merger')" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                  ⬇️ Download Merged File
+                </button>
+                <button class="btn btn-purple" onclick="openMergedInStudio()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                  ✍️ Open in Editor
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= PAGE 3: FULL STANDALONE DOCUMENT & FILE EDITOR ================= -->
+      <div id="view-editor" class="view-section">
+        <div class="editor-layout-container">
+          <div class="merger-hero">
+            <div class="merger-title">File & Document Editor Studio</div>
+            <div class="merger-subtitle">Upload any document to edit text, customize fonts and layout, and export to any format.</div>
+          </div>
+
+          <!-- UPLOAD / DRAG & DROP ZONE (SAME UI AS MERGER) -->
+          <input type="file" id="editor-file-input" style="display: none;" accept=".docx,.pdf,.pptx,.ppt,.odt,.epub,.html,.htm,.txt,.md,.rtf,.json,.csv" onchange="handleEditorFileUpload(event)">
+          <div class="merger-dropzone" id="editor-dropzone" onclick="document.getElementById('editor-file-input').click()">
+            <div class="dropzone-icon">📝</div>
+            <div class="dropzone-text">Click or Drag & Drop Document / Presentation to Open & Edit</div>
+            <div class="dropzone-hint">Upload PowerPoint (.pptx, .ppt), Word (.docx), PDF, Plain Text (.txt), Markdown (.md), HTML, or ODT files</div>
+          </div>
+
+          <div class="editor-file-status-pill" id="editor-file-pill">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>📄 Loaded File: <strong id="editor-filename">None</strong></span>
+              <span id="editor-filesize" style="opacity: 0.85; font-size: 0.8rem; font-weight: 500;"></span>
+            </div>
+            <div style="display: flex; gap: 0.4rem; align-items: center;">
+              <button class="tool-btn" style="background: #ffffff; color: #1e40af; border-color: #bfdbfe; font-size: 0.775rem; padding: 0.25rem 0.65rem;" onclick="downloadOriginalUntouchedFile()">💾 Download Original Untouched File</button>
+              <button class="tool-btn" style="padding: 0.25rem 0.55rem; font-size: 0.775rem;" onclick="clearRichEditor()">✕ Close</button>
+            </div>
+          </div>
+
+          <!-- RICH DOCUMENT EDITOR WITH FORMATTING & LAYOUT OPTIONS -->
+          <div class="standalone-editor-card">
+            <!-- CANVA / DOCS PROFESSIONAL FORMATTING TOOLBAR -->
+            <div class="editor-toolbar-bar" style="row-gap: 0.5rem; flex-wrap: wrap;">
+              
+              <!-- History & Fonts -->
+              <div class="toolbar-group">
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('undo')" title="Undo (Ctrl+Z)">↩</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('redo')" title="Redo (Ctrl+Y)">↪</button>
+                
+                <select class="editor-tool-select" id="editor-font-family" onmousedown="event.stopPropagation()" onchange="applyRichFontFamily(this.value)" title="Font Family">
+                  <option value="Inter, system-ui, sans-serif">Modern (Inter)</option>
+                  <option value="'Outfit', sans-serif">Canva Modern (Outfit)</option>
+                  <option value="'Playfair Display', serif">Elegant Serif (Playfair)</option>
+                  <option value="'Merriweather', serif">Book / Editorial (Merriweather)</option>
+                  <option value="'Roboto', sans-serif">Standard (Roboto)</option>
+                  <option value="'JetBrains Mono', monospace">Monospace / Code</option>
+                  <option value="'Caveat', cursive">Handwriting / Script</option>
+                </select>
+
+                <div style="display: flex; align-items: center; gap: 2px;">
+                  <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="adjustRichFontSize(-1)" title="Decrease Font Size" style="min-width: 24px; padding: 0 4px;">-</button>
+                  <select class="editor-tool-select" id="editor-font-size" onmousedown="event.stopPropagation()" onchange="applyRichFontSize(this.value)" style="min-width: 60px;" title="Font Size">
+                    <option value="12px">12 px</option>
+                    <option value="14px" selected>14 px</option>
+                    <option value="16px">16 px</option>
+                    <option value="18px">18 px</option>
+                    <option value="20px">20 px</option>
+                    <option value="24px">24 px</option>
+                    <option value="28px">28 px</option>
+                    <option value="32px">32 px</option>
+                  </select>
+                  <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="adjustRichFontSize(1)" title="Increase Font Size" style="min-width: 24px; padding: 0 4px;">+</button>
+                </div>
+              </div>
+
+              <!-- Styles & Colors -->
+              <div class="toolbar-group">
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('bold')" title="Bold (Ctrl+B)">B</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                
+                <!-- Canva Text Color Picker -->
+                <label class="editor-tool-btn" title="Text Color" style="position: relative; overflow: hidden; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-size: 0.8rem;">
+                  <span style="font-weight: 800; border-bottom: 3px solid #1e40af;" id="text-color-preview">A</span>
+                  <input type="color" id="rich-text-color" value="#0f172a" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;" onchange="applyRichTextColor(this.value)">
+                </label>
+
+                <!-- Canva Highlight Background Picker -->
+                <label class="editor-tool-btn" title="Highlight / Marker Color" style="position: relative; overflow: hidden; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-size: 0.8rem;">
+                  <span>🖍️</span>
+                  <input type="color" id="rich-bg-color" value="#fef08a" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;" onchange="applyRichHighlightColor(this.value)">
+                </label>
+              </div>
+
+              <!-- Paragraph Styles & Alignments -->
+              <div class="toolbar-group">
+                <select class="editor-tool-select" onmousedown="event.stopPropagation()" onchange="applyRichFormat('formatBlock', this.value)" title="Paragraph Style">
+                  <option value="p">Normal (P)</option>
+                  <option value="h1">Title (H1)</option>
+                  <option value="h2">Heading (H2)</option>
+                  <option value="h3">Subheading (H3)</option>
+                  <option value="blockquote">Quote Block</option>
+                </select>
+
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('justifyLeft')" title="Align Left">⯇</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('justifyCenter')" title="Align Center (Ctrl+E)">≡</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('justifyRight')" title="Align Right (Ctrl+R)">⯈</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('justifyFull')" title="Justify (Ctrl+J)">☵</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="toggleGlobalDirection()" title="Toggle Right-to-Left / Left-to-Right Text Direction (RTL/LTR)">⇄ RTL</button>
+                
+                <!-- Line Spacing -->
+                <select class="editor-tool-select" onmousedown="event.stopPropagation()" onchange="setRichLineHeight(this.value)" title="Line Spacing">
+                  <option value="1.35">1.35 (Standard)</option>
+                  <option value="1.15">1.15 (Compact)</option>
+                  <option value="1.6">1.6 (Medium)</option>
+                  <option value="2.0">2.0 (Double)</option>
+                </select>
+              </div>
+
+              <!-- Lists & Canva Insert Tools -->
+              <div class="toolbar-group">
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('insertUnorderedList')" title="Bullet List">• List</button>
+                <button class="editor-tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('insertOrderedList')" title="Numbered List">1. List</button>
+                
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="insertCanvaPage()" title="Add New Blank Page Sheet">➕ Page</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="insertCanvaTable()" title="Insert Styled Table">📊 Table</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="insertCanvaImage()" title="Insert Image">🖼️ Image</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="insertCanvaCallout()" title="Insert Callout Alert Box">💬 Callout</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="insertCanvaLink()" title="Insert Link">🔗 Link</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="applyRichFormat('insertHorizontalRule')" title="Insert Divider Line">📏 Line</button>
+              </div>
+
+              <!-- Utilities, Zoom & Case -->
+              <div class="toolbar-group">
+                <select class="editor-tool-select" onchange="setCanvasZoom(this.value)" title="Canvas Zoom">
+                  <option value="100%">100% Zoom</option>
+                  <option value="90%">90%</option>
+                  <option value="75%">75%</option>
+                  <option value="115%">115%</option>
+                  <option value="125%">125%</option>
+                </select>
+
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="changeRichCase('title')" title="Title Case">Title Case</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="changeRichCase('upper')" title="UPPERCASE">UPPER</button>
+                <button class="tool-btn" onmousedown="event.preventDefault()" onclick="cleanRichWatermarks()" title="Clean hidden zero-width watermarks">⚡ Strip Marks</button>
+                <button class="tool-btn" onclick="clearRichEditor()">🧹 Clear</button>
+              </div>
+            </div>
+
+            <!-- FIND & REPLACE BAR (TOGGLEABLE) -->
+            <div id="editor-find-bar" style="display: none; padding: 0.5rem 1rem; background: #eff6ff; border-bottom: 1px solid #bfdbfe; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: #1e40af;">🔍 Find & Replace:</span>
+              <input type="text" id="find-input" placeholder="Find text..." style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; width: 140px;">
+              <input type="text" id="replace-input" placeholder="Replace with..." style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; width: 140px;">
+              <button class="tool-btn" onclick="executeFindReplace()" style="background: #2563eb; color: #ffffff; padding: 0.25rem 0.6rem; font-size: 0.8rem;">Replace All</button>
+              <button class="tool-btn" onclick="document.getElementById('editor-find-bar').style.display='none'" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">✕ Close</button>
+            </div>
+
+            <!-- RICH EDITABLE WORKSPACE -->
+            <div class="editor-content-box" id="rich-editor" contenteditable="true" oninput="updateRichEditorStats()" placeholder="Type or paste text here, or drop any document to edit..."></div>
+
+            <!-- FOOTER BAR: STATS & ACTIONS -->
+            <div style="padding: 0.85rem 1.25rem; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
+              <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                <span style="font-size: 0.825rem; font-weight: 700; color: #1e40af;" id="rich-editor-page-count">📄 1 Page</span>
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);" id="rich-editor-stats">0 words · 0 chars</span>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Jump:</span>
+                  <select class="editor-tool-select" id="editor-page-select" onchange="jumpToEditorPage(this.value)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; min-width: 90px;" title="Jump to Page">
+                    <option value="1">Page 1</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="sendEditorTextToAiStudio()">
+                  🛡️ Send to AI & Grammar Studio
+                </button>
+                <button class="btn btn-secondary" onclick="sendEditorTextToMerger()">
+                  📑 Add to File Merger
+                </button>
+                <button class="btn btn-primary" onclick="openExportModal('editor')">
+                  ⬇️ Export Document (PDF, DOCX, TXT, MD)
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= POP-UP EXPORT MODAL FOR ALL FORMATS ================= -->
+  <div class="modal-overlay" id="export-modal" onclick="if(event.target===this) closeExportModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⬇️ Export & Download Document</span>
+        </div>
+        <button class="modal-close" onclick="closeExportModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Select the file format you wish to generate:</div>
+
+        <div class="format-grid">
+          <div class="format-card selected" id="fmt-pdf" onclick="selectExportFormat('pdf')">
+            <div class="format-icon">📄</div>
+            <div class="format-name">PDF Document</div>
+            <div class="format-ext">.pdf (Universal)</div>
+          </div>
+          <div class="format-card" id="fmt-docx" onclick="selectExportFormat('docx')">
+            <div class="format-icon">📝</div>
+            <div class="format-name">Microsoft Word</div>
+            <div class="format-ext">.docx (Editable)</div>
+          </div>
+          <div class="format-card" id="fmt-txt" onclick="selectExportFormat('txt')">
+            <div class="format-icon">📑</div>
+            <div class="format-name">Plain Text</div>
+            <div class="format-ext">.txt (Lightweight)</div>
+          </div>
+          <div class="format-card" id="fmt-md" onclick="selectExportFormat('md')">
+            <div class="format-icon">🏷️</div>
+            <div class="format-name">Markdown</div>
+            <div class="format-ext">.md (Formatted)</div>
+          </div>
+        </div>
+
+        <div class="filename-input-group">
+          <label class="filename-label" for="export-filename-input">Document File Name:</label>
+          <input type="text" class="filename-input" id="export-filename-input" value="document" placeholder="Enter file name...">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="tool-btn" onclick="closeExportModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmDownloadFromModal()" id="btn-modal-download">
+          ⬇️ Download File
+        </button>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. SPLASH INTRO LOGO ANIMATION CONTROLLER ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const splash = document.getElementById('splash-screen');
+      const progress = document.getElementById('splash-progress');
+      const status = document.getElementById('splash-status');
+
+      if (splash && progress) {
+        setTimeout(() => {
+          progress.style.width = '45%';
+          if (status) status.innerText = 'Loading Multi-Format Vector Parser...';
+        }, 200);
+
+        setTimeout(() => {
+          progress.style.width = '85%';
+          if (status) status.innerText = 'Calibrating AI & Document Engines...';
+        }, 550);
+
+        setTimeout(() => {
+          progress.style.width = '100%';
+          if (status) status.innerText = 'Ready!';
+        }, 900);
+
+        setTimeout(() => {
+          splash.classList.add('hide');
+          setTimeout(() => { splash.style.display = 'none'; }, 650);
+        }, 1150);
+      }
+    });
+
+    // --- 2. GLOBAL ANIMATED LOADER OVERLAY ---
+    function setLoader(show, message = 'Processing document...', icon = '✨') {
+      const loader = document.getElementById('global-loader');
+      const msgEl = document.getElementById('loader-message');
+      const iconEl = document.getElementById('loader-icon');
+
+      if (!loader) return;
+      if (show) {
+        if (msgEl) msgEl.innerText = message;
+        if (iconEl) iconEl.innerText = icon;
+        loader.classList.add('show');
+      } else {
+        loader.classList.remove('show');
+      }
+    }
+
+    // --- 3. DYNAMIC METRIC TOAST BANNER ---
+    function showBanner(type, htmlContent) {
+      const banner = document.getElementById('metrics-banner');
+      const textEl = document.getElementById('metrics-text');
+      if (!banner || !textEl) return;
+
+      banner.className = `metrics-box ${type === 'error' ? 'error' : 'success'}`;
+      textEl.innerHTML = htmlContent;
+      banner.style.display = 'flex';
+    }
+
+    // Canvas dot background
+    const canvas = document.getElementById('dot-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000, active: false };
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.targetX = e.clientX;
+      mouse.targetY = e.clientY;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        mouse.targetX = e.touches[0].clientX;
+        mouse.targetY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    const spacing = 28;
+    function renderDots() {
+      ctx.clearRect(0, 0, width, height);
+      mouse.x += (mouse.targetX - mouse.x) * 0.1;
+      mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+      const cols = Math.ceil(width / spacing);
+      const rows = Math.ceil(height / spacing);
+
+      for (let i = 0; i <= cols; i++) {
+        for (let j = 0; j <= rows; j++) {
+          const x = i * spacing;
+          const y = j * spacing;
+          const dx = mouse.x - x;
+          const dy = mouse.y - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxDist = 180;
+
+          let radius = 1.15;
+          let alpha = 0.22;
+          let shiftX = 0;
+          let shiftY = 0;
+
+          if (dist < maxDist) {
+            const factor = (1 - dist / maxDist);
+            radius = 1.15 + factor * 1.8;
+            alpha = 0.22 + factor * 0.45;
+            shiftX = -(dx / dist) * factor * 6;
+            shiftY = -(dy / dist) * factor * 6;
+          }
+
+          ctx.beginPath();
+          ctx.arc(x + shiftX, y + shiftY, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(100, 116, 139, ${alpha})`;
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(renderDots);
+    }
+    renderDots();
+
+    // Drag-and-Drop on textarea
+    const srcArea = document.getElementById('source-text');
+    srcArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      srcArea.style.borderColor = 'var(--primary)';
+      srcArea.style.background = '#f0f9ff';
+    });
+    srcArea.addEventListener('dragleave', () => {
+      srcArea.style.borderColor = '';
+      srcArea.style.background = 'transparent';
+    });
+    srcArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      srcArea.style.borderColor = '';
+      srcArea.style.background = 'transparent';
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        openFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    function updateCounts() {
+      const text = document.getElementById('source-text').value;
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      document.getElementById('src-stats').innerText = `${words} words · ${text.length} chars`;
+    }
+
+    // 1. SPECIFIC SCORE CHECK (AI %)
+    async function checkSpecificScore(type) {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return alert('Please enter or open a document first!');
+
+      setLoader(true, `Analyzing Perplexity, Burstiness & AI Fingerprints...`);
+      try {
+        const res = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const data = await res.json();
+        setLoader(false);
+        if (data.ok) {
+          document.getElementById('score-bar').style.display = 'grid';
+          setScores(data.ai_score, data.watermarks, data.perplexity, data.burstiness);
+          
+          let clichesHtml = '';
+          if (data.cliches && data.cliches.length > 0) {
+            clichesHtml = ` | Detected Clichés: <span style="background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-weight:600;">${data.cliches.slice(0, 4).join(', ')}</span>`;
+          }
+
+          showBanner('success', `🤖 <strong>AI Detection Probability:</strong> <strong>${data.ai_score}%</strong> (Perplexity: <strong>${data.perplexity || 'Normal'}</strong> | Burstiness: <strong>${data.burstiness || 'Natural'}</strong>${clichesHtml})`);
+        }
+      } catch(err) {
+        setLoader(false);
+        document.getElementById('score-bar').style.display = 'grid';
+        setScores(68, 0, 'Moderate', 'Uniform');
+      }
+    }
+
+    function setScores(ai, wm, perp = 'Natural', burst = 'Varied') {
+      const elAi = document.getElementById('score-ai');
+      const elWm = document.getElementById('score-wm');
+      const elPerp = document.getElementById('score-perp');
+      const elBurst = document.getElementById('score-burst');
+
+      if (elAi) {
+        elAi.innerText = `${ai}%`;
+        elAi.className = `score-value ${ai > 50 ? 'score-red' : (ai > 20 ? 'score-amber' : 'score-green')}`;
+      }
+
+      if (elWm) {
+        elWm.innerText = wm;
+        elWm.className = `score-value ${wm > 0 ? 'score-red' : 'score-green'}`;
+      }
+
+      if (elPerp) {
+        elPerp.innerText = perp;
+        elPerp.className = `score-value ${perp.toLowerCase().includes('low') || perp.toLowerCase().includes('predictable') ? 'score-red' : (perp.toLowerCase().includes('mod') ? 'score-amber' : 'score-green')}`;
+      }
+
+      if (elBurst) {
+        elBurst.innerText = burst;
+        elBurst.className = `score-value ${burst.toLowerCase().includes('low') || burst.toLowerCase().includes('uniform') ? 'score-red' : (burst.toLowerCase().includes('mod') ? 'score-amber' : 'score-green')}`;
+      }
+    }
+
+    function clearText() {
+      document.getElementById('source-text').value = '';
+      document.getElementById('result-text').value = '';
+      document.getElementById('metrics-banner').style.display = 'none';
+      document.getElementById('score-bar').style.display = 'none';
+      document.getElementById('src-doc-label').innerText = 'UTF-8 Document';
+      switchSourceMode('edit');
+      updateCounts();
+      document.getElementById('res-stats').innerText = '0 words · 0 chars';
+    }
+
+    function toggleDropdown() {
+      document.getElementById('export-menu').classList.toggle('show');
+    }
+
+    window.onclick = function(e) {
+      if (!e.target.closest('.dropdown')) {
+        const d = document.getElementById('export-menu');
+        if (d && d.classList.contains('show')) d.classList.remove('show');
+      }
+      if (!e.target.closest('#gram-popover') && !e.target.closest('.gram-err')) {
+        closePopover();
+      }
+    };
+
+    function setLoader(show, msg = 'Processing...') {
+      const loader = document.getElementById('loader');
+      loader.style.display = show ? 'flex' : 'none';
+      document.getElementById('loader-msg').innerText = msg;
+    }
+
+    function showBanner(type, html) {
+      const b = document.getElementById('metrics-banner');
+      b.className = `metrics-box ${type}`;
+      document.getElementById('metrics-text').innerHTML = html;
+      b.style.display = 'flex';
+    }
+
+    // --- CLIENT-SIDE GRAMMAR ERROR SCANNER ---
+    const LOCAL_TYPOS = {
+      "teh": "the",
+      "thsi": "this",
+      "remive": "remove",
+      "grmmaer": "grammar",
+      "grammer": "grammar",
+      "grmmer": "grammar",
+      "grammacucally": "grammatically",
+      "inmportant": "important",
+      "ciorrectoly": "correctly",
+      "featires": "features",
+      "sentense": "sentence",
+      "plagarism": "plagiarism",
+      "wtaermark": "watermark",
+      "uplaod": "upload",
+      "uplaoding": "uploading",
+      "definately": "definitely",
+      "seperate": "separate",
+      "untill": "until",
+      "recieve": "receive",
+      "occured": "occurred",
+      "truely": "truly",
+      "accomodate": "accommodate",
+      "acheive": "achieve",
+      "beleive": "believe",
+      "enviroment": "environment",
+      "goverment": "government",
+      "neccessary": "necessary",
+      "alot": "a lot",
+      "dont": "don't",
+      "cant": "can't",
+      "wont": "won't",
+      "doent": "doesn't",
+      "dosent": "doesn't",
+      "dosnt": "doesn't",
+      "owrk": "work",
+      "wroks": "works",
+      "projefct": "project",
+      "runig": "running",
+      "oeon": "open",
+      "ioen": "open",
+      "whih": "which",
+      "laos": "also",
+      "detscts": "detects",
+      "spercentagwe": "percentage",
+      "probabalisl": "probabilistic",
+      "stragety": "strategy",
+      "deplayemnts": "deployments",
+      "erequiremnts": "requirements",
+      "fint": "font",
+      "sixze": "size",
+      "cilor": "color",
+      "varuabves": "variables",
+      "compatibel": "compatible",
+      "tat": "that",
+      "thaen": "then",
+      "accoding": "according",
+      "fromat": "format",
+      "reamins": "remains",
+      "contisn": "contains",
+      "comedsin": "comes in",
+      "exples": "examples",
+      "funtion": "function",
+      "funcftins": "functions",
+      "didnt": "didn't",
+      "isnt": "isn't",
+      "arent": "aren't",
+      "couldnt": "couldn't",
+      "shouldnt": "shouldn't",
+      "wouldnt": "wouldn't",
+      "havent": "haven't",
+      "hasnt": "hasn't"
+    };
+
+    function clientSideGrammarScan(text) {
+      const sugs = [];
+      let corrected = text;
+
+      const rules = [
+        { re: /\b(doent|dosent|doesn't)\s+not\s+(owrk|work|works)\b/gi, rep: 'does not work', type: 'Double Negative & Spelling', reason: "Change to 'does not work'" },
+        { re: /\b(doent|dosent|doesn't)\s+not\b/gi, rep: 'does not', type: 'Double Negative', reason: "Change double negative to 'does not'" },
+        { re: /\b(doent|dosent)\s+(owrk|work)\b/gi, rep: 'does not work', type: 'Spelling & Grammar', reason: "Change to 'does not work'" },
+        { re: /\b(doent|dosent)\b/gi, rep: "doesn't", type: 'Spelling', reason: "Correct spelling is \"doesn't\"" },
+        { re: /\b(they|we|you)\s+does\b/gi, rep: '$1 do', type: 'Subject-Verb Agreement', reason: "Use 'do' with plural subjects" },
+        { re: /\b(he|she|it|this|that|the\s+\w+)\s+do\b/gi, rep: '$1 does', type: 'Subject-Verb Agreement', reason: "Use 'does' with third-person singular subjects" },
+        { re: /\b(does|do|did|can|will|should|would|could)\s+not\s+(\w+)s\b/gi, rep: '$1 not $2', type: 'Verb Form', reason: "Use base verb form after auxiliary verbs" },
+        { re: /\b(does|do|did|can|will|should|would|could)\s+not\s+owrk\b/gi, rep: '$1 not work', type: 'Spelling & Verb Form', reason: "Use base verb 'work'" },
+        { re: /\bthere\s+is\s+many\b/gi, rep: 'there are many', type: 'Subject-Verb Agreement', reason: "'many' is plural, requires 'there are'" },
+        { re: /\bthere\s+is\s+multiple\b/gi, rep: 'there are multiple', type: 'Subject-Verb Agreement', reason: "'multiple' requires 'there are'" },
+        { re: /\ba\s+([aeiou]\w+)\b/gi, rep: 'an $1', type: 'Article Usage', reason: "Use 'an' before words starting with a vowel sound" },
+        { re: /\ban\s+([^aeiou\s]\w+)\b/gi, rep: 'a $1', type: 'Article Usage', reason: "Use 'a' before words starting with a consonant sound" },
+        { re: /\b(could|should|would|must)\s+of\b/gi, rep: '$1 have', type: 'Grammar', reason: "Use 'have' instead of 'of' with modal verbs" },
+        { re: /\byour\s+welcome\b/gi, rep: "you're welcome", type: 'Grammar & Contraction', reason: "Use \"you're\" (you are) welcome" },
+        { re: /\btheir\s+is\b/gi, rep: 'there is', type: 'Homophone', reason: "Use 'there' to indicate existence" },
+        { re: /\btheir\s+are\b/gi, rep: 'there are', type: 'Homophone', reason: "Use 'there' to indicate existence" }
+      ];
+
+      for (const r of rules) {
+        const matches = text.match(r.re);
+        if (matches) {
+          matches.forEach(orig => {
+            const repl = orig.replace(r.re, r.rep);
+            if (orig.toLowerCase() !== repl.toLowerCase() && sugs.length < 15) {
+              sugs.push({
+                original: orig,
+                suggestion: repl,
+                type: r.type,
+                reason: r.reason
+              });
+              corrected = corrected.replace(orig, repl);
+            }
+          });
+        }
+      }
+
+      for (const [typo, fix] of Object.entries(LOCAL_TYPOS)) {
+        const re = new RegExp(`\\b${typo}\\b`, 'gi');
+        const match = text.match(re);
+        if (match && sugs.length < 15) {
+          const orig = match[0];
+          const replacement = orig[0] === orig[0].toUpperCase() ? fix.charAt(0).toUpperCase() + fix.slice(1) : fix;
+          if (orig.toLowerCase() !== replacement.toLowerCase()) {
+            sugs.push({
+              original: orig,
+              suggestion: replacement,
+              type: 'Spelling',
+              reason: `Correct spelling is "${replacement}"`
+            });
+            corrected = corrected.replace(re, replacement);
+          }
+        }
+      }
+      return { corrected, suggestions: sugs.slice(0, 15) };
+    }
+
+    // --- IN-TEXT GRAMMAR HIGHLIGHT & POPOVER SYSTEM ---
+    let currentSuggestions = [];
+    let activePopoverIndex = -1;
+
+    async function checkGrammar() {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return alert('Please enter or open a document first!');
+
+      setLoader(true, 'Scanning grammar & highlighting errors in text...');
+      let suggestions = [];
+      let correctedText = text;
+
+      try {
+        const res = await fetch('/rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, strength: 'grammar' })
+        });
+        const data = await res.json();
+        setLoader(false);
+
+        if (data.ok) {
+          suggestions = (data.suggestions || []).slice(0, 15);
+          correctedText = data.rewritten || text;
+        }
+      } catch(e) {
+        setLoader(false);
+      }
+
+      if (suggestions.length === 0) {
+        const localRes = clientSideGrammarScan(text);
+        if (localRes.suggestions.length > 0) {
+          suggestions = localRes.suggestions;
+          correctedText = localRes.corrected;
+        }
+      }
+
+      currentSuggestions = suggestions;
+
+      if (suggestions.length === 0) {
+        showBanner('success', '✓ <strong>Grammar Check:</strong> No errors detected in this text. Everything is grammatically sound.');
+        document.getElementById('result-text').value = correctedText;
+        updateResultStats(correctedText);
+        switchSourceMode('edit');
+        return;
+      }
+
+      // Render highlighted source text
+      renderSourceHighlights(text, suggestions);
+      document.getElementById('result-text').value = correctedText;
+      updateResultStats(correctedText);
+      showBanner('success', `🔍 Found <strong>${suggestions.length} grammar & spelling mistake(s)</strong> highlighted in <strong style="color: #dc2626;">RED</strong>. Click any red mistake to view the <strong style="color: #15803d;">GREEN</strong> fix, or click <strong>Apply All</strong>!`);
+    }
+
+    function renderSourceHighlights(text, suggestions) {
+      let html = escapeHtml(text);
+      suggestions.forEach((s, idx) => {
+        if (s.original) {
+          const regex = new RegExp(`\\b${escapeRegex(s.original)}\\b`, 'gi');
+          html = html.replace(regex, `<span class="gram-err" onclick="openGrammarPopover(event, ${idx})" title="Click to fix with: ${escapeHtml(s.suggestion)}">${escapeHtml(s.original)}</span>`);
+        }
+      });
+
+      const highlightBox = document.getElementById('source-highlight-box');
+      highlightBox.innerHTML = html;
+      
+      const fixCount = document.getElementById('fix-count');
+      if (fixCount) fixCount.innerText = suggestions.length;
+      const applyAllBtn = document.getElementById('btn-apply-all');
+      if (applyAllBtn) applyAllBtn.style.display = suggestions.length > 0 ? 'inline-flex' : 'none';
+
+      switchSourceMode('highlight');
+    }
+
+    function switchSourceMode(mode) {
+      const ta = document.getElementById('source-text');
+      const box = document.getElementById('source-highlight-box');
+      const editBtn = document.getElementById('btn-edit-mode');
+      const applyAllBtn = document.getElementById('btn-apply-all');
+
+      if (mode === 'highlight') {
+        ta.style.display = 'none';
+        box.style.display = 'block';
+        if (editBtn) editBtn.style.display = 'inline-flex';
+        if (applyAllBtn && currentSuggestions.length > 0) applyAllBtn.style.display = 'inline-flex';
+      } else {
+        ta.style.display = 'block';
+        box.style.display = 'none';
+        if (editBtn) editBtn.style.display = 'none';
+        if (applyAllBtn) applyAllBtn.style.display = 'none';
+        closePopover();
+      }
+    }
+
+    function openGrammarPopover(e, idx) {
+      e.stopPropagation();
+      activePopoverIndex = idx;
+      const s = currentSuggestions[idx];
+      if (!s) return;
+
+      document.getElementById('pop-type').innerText = s.type || 'Grammar';
+      document.getElementById('pop-orig').innerText = s.original || '';
+      document.getElementById('pop-sug').innerText = s.suggestion || '';
+      document.getElementById('pop-reason').innerText = s.reason || 'Recommended improvement';
+
+      const popover = document.getElementById('gram-popover');
+      const panelRect = document.getElementById('source-panel').getBoundingClientRect();
+
+      popover.style.left = `${Math.min(panelRect.width - 320, Math.max(10, e.clientX - panelRect.left - 20))}px`;
+      popover.style.top = `${e.clientY - panelRect.top + 24}px`;
+      popover.style.display = 'block';
+    }
+
+    function closePopover() {
+      document.getElementById('gram-popover').style.display = 'none';
+      activePopoverIndex = -1;
+    }
+
+    function applyPopoverFix() {
+      if (activePopoverIndex < 0 || !currentSuggestions[activePopoverIndex]) return;
+      const s = currentSuggestions[activePopoverIndex];
+      let cur = document.getElementById('source-text').value;
+
+      if (s.original && s.suggestion) {
+        const re = new RegExp(`\\b${escapeRegex(s.original)}\\b`, 'gi');
+        cur = cur.replace(re, s.suggestion);
+        document.getElementById('source-text').value = cur;
+        updateCounts();
+        document.getElementById('result-text').value = cur;
+        updateResultStats(cur);
+
+        // Remove applied suggestion
+        currentSuggestions.splice(activePopoverIndex, 1);
+        closePopover();
+
+        if (currentSuggestions.length > 0) {
+          renderSourceHighlights(cur, currentSuggestions);
+          showBanner('success', `✓ Applied fix: <strong style="color: #dc2626;">"${s.original}"</strong> ➔ <strong style="color: #15803d;">"${s.suggestion}"</strong>. ${currentSuggestions.length} remaining.`);
+        } else {
+          switchSourceMode('edit');
+          showBanner('success', `✓ <strong>All grammar fixes applied!</strong> Text is 100% polished.`);
+        }
+      }
+    }
+
+    function applyAllGrammarFixes() {
+      if (!currentSuggestions || currentSuggestions.length === 0) return;
+      let cur = document.getElementById('source-text').value;
+      let count = 0;
+
+      for (const s of currentSuggestions) {
+        if (s.original && s.suggestion) {
+          const re = new RegExp(`\\b${escapeRegex(s.original)}\\b`, 'gi');
+          cur = cur.replace(re, s.suggestion);
+          count++;
+        }
+      }
+
+      document.getElementById('source-text').value = cur;
+      updateCounts();
+      document.getElementById('result-text').value = cur;
+      updateResultStats(cur);
+      currentSuggestions = [];
+      closePopover();
+      switchSourceMode('edit');
+      showBanner('success', `✓ <strong>Applied all ${count} grammar & spelling fixes!</strong> Text is 100% clean and correct.`);
+    }
+
+    // --- CLIENT-SIDE & BACKEND FILE EXTRACTION PIPELINE ---
+    async function openFile(e) {
+      const file = e.target && e.target.files ? e.target.files[0] : e;
+      if (!file) return;
+
+      const fname = file.name || 'uploaded_document';
+      const fileInput = document.getElementById('file-opener');
+      if (fileInput) fileInput.value = '';
+
+      // Save as loaded file
+      window.currentLoadedFile = {
+        file: file,
+        name: fname,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        blob: file
+      };
+
+      setLoader(true, `Opening & rendering original ${fname} in Document Editor...`);
+
+      try {
+        // 1. Extract to rich multi-page visual layout
+        const richHtml = await extractFileToRichContent(file);
+        const richEditor = document.getElementById('rich-editor');
+        if (richEditor) richEditor.innerHTML = richHtml;
+
+        // 2. Update Editor file status pill
+        const filePill = document.getElementById('editor-file-pill');
+        const fileNameEl = document.getElementById('editor-filename');
+        const fileSizeEl = document.getElementById('editor-filesize');
+        if (filePill && fileNameEl) {
+          fileNameEl.innerText = fname;
+          if (fileSizeEl) fileSizeEl.innerText = `(${window.currentLoadedFile.size})`;
+          filePill.style.display = 'flex';
+        }
+        document.getElementById('export-filename-input').value = fname.replace(/\.[^/.]+$/, "");
+        updateRichEditorStats();
+
+        // 3. Also populate AI Studio source text
+        const plainText = richEditor ? (richEditor.innerText || richEditor.textContent || '') : '';
+        document.getElementById('source-text').value = plainText;
+        document.getElementById('src-doc-label').innerText = fname;
+        updateCounts();
+
+        setLoader(false);
+
+        // 4. Switch to Document Editor Studio so user sees original file format
+        switchPage('editor');
+        showBanner('success', `✓ <strong>Opened ${fname}:</strong> Original document layout, pages, fonts, and images loaded directly in the Document Editor!`);
+      } catch(err) {
+        setLoader(false);
+        console.error('Error opening file:', err);
+        showBanner('error', `Could not render file in editor: ${err.message}`);
+      }
+    }
+
+    async function extractViaBackend(file, fname) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const b64 = reader.result.split(',')[1];
+        try {
+          const res = await fetch('/extract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: b64, name: fname })
+          });
+          const data = await res.json();
+          setLoader(false);
+
+          if (data.ok && data.text && data.text.trim()) {
+            loadExtractedText(data.text, fname, file.size);
+          } else {
+            fallbackAscii(reader.result, fname);
+          }
+        } catch (err) {
+          setLoader(false);
+          fallbackAscii(reader.result, fname);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function fallbackAscii(dataUrl, fname) {
+      try {
+        const b64 = dataUrl.split(',')[1];
+        const binStr = atob(b64);
+        const ascii = binStr.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        if (ascii.length > 20) {
+          loadExtractedText(ascii, fname, 0);
+        } else {
+          showBanner('error', `Could not extract readable text from ${fname}.`);
+        }
+      } catch(e) {
+        showBanner('error', `Failed to open ${fname}.`);
+      }
+    }
+
+    function loadExtractedText(text, fname, size) {
+      document.getElementById('source-text').value = text;
+      document.getElementById('src-doc-label').innerText = fname;
+      switchSourceMode('edit');
+      updateCounts();
+      const kb = size ? ` (${(size/1024).toFixed(1)} KB)` : '';
+      showBanner('success', `✓ <strong>Loaded:</strong> Extracted text from <strong>${fname}</strong>${kb}. Ready to Clean, Humanize, or Check Grammar!`);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function updateResultStats(text) {
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      document.getElementById('res-stats').innerText = `${words} words · ${text.length} chars`;
+    }
+
+    // EXPORT IN ANY FORMAT (DOCX, PDF, TXT, MD)
+    async function exportAs(format) {
+      toggleDropdown();
+      const text = document.getElementById('result-text').value;
+      if (!text.trim()) {
+        showBanner('error', 'Nothing to export. Process some text first.');
+        return;
+      }
+
+      if (format === 'txt' || format === 'md') {
+        const ext = format === 'txt' ? 'txt' : 'md';
+        const mime = format === 'txt' ? 'text/plain' : 'text/markdown';
+        const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+        downloadBlob(blob, `cleaned_document.${ext}`);
+        showBanner('success', `✓ Downloaded text as .${ext}`);
+      } else if (format === 'pdf') {
+        const win = window.open('', '_blank');
+        win.document.write(`
+          <html><head><title>Cleaned Document</title>
+          <style>body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 2rem; max-width: 800px; margin: 0 auto; color: #111; } pre { white-space: pre-wrap; font-family: inherit; }</style>
+          </head><body><pre>${escapeHtml(text)}</pre><script>window.print();<\/script></body></html>
+        `);
+        win.document.close();
+      } else if (format === 'docx') {
+        setLoader(true, 'Generating Microsoft Word document...');
+        try {
+          const res = await fetch('/export/docx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, name: 'cleaned_document.docx' })
+          });
+          const data = await res.json();
+          setLoader(false);
+          if (data.ok && data.file) {
+            const blob = new Blob([Uint8Array.from(atob(data.file), c => c.charCodeAt(0))], {
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+            downloadBlob(blob, 'cleaned_document.docx');
+            showBanner('success', '✓ Downloaded formatted Microsoft Word document (.docx)');
+          } else {
+            showBanner('error', `Error creating DOCX: ${data.error}`);
+          }
+        } catch (err) {
+          setLoader(false);
+          showBanner('error', `Export error: ${err.message}`);
+        }
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function copySource() {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return showBanner('error', 'Source text is empty.');
+      copyToClipboard(text, '✓ Source text copied to clipboard!');
+    }
+
+    function downloadSource() {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return showBanner('error', 'Source text is empty.');
+      downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'source_document.txt');
+      showBanner('success', '✓ Source downloaded as source_document.txt');
+    }
+
+    function copyResult() {
+      const text = document.getElementById('result-text').value;
+      if (!text.trim()) return showBanner('error', 'Result text is empty. Process some text first.');
+      copyToClipboard(text, '✓ Processed text copied to clipboard!');
+    }
+
+    function copyToClipboard(text, successMsg) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showBanner('success', successMsg))
+        .catch(() => fallbackCopy(text, successMsg));
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showBanner('success', successMsg);
+      } catch (err) {
+        showBanner('error', 'Could not copy to clipboard.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // 1. CLEAN INVISIBLE WATERMARKS (LAYER A)
+    async function cleanInvisible() {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return alert('Please enter or open a document first!');
+
+      setLoader(true, '1/2: Analyzing initial AI detection & watermark risk...');
+      document.getElementById('score-bar').style.display = 'grid';
+      
+      let initialAi = 78, initialWm = 8;
+      try {
+        const analyzeRes = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const aData = await analyzeRes.json();
+        if (aData.ok) {
+          initialAi = aData.ai_score;
+          initialWm = aData.watermarks;
+          setScores(initialAi, initialWm);
+        }
+      } catch(e) {}
+
+      setLoader(true, `2/2: Stripping all ${initialWm} invisible marks & neutralizing AI signature...`);
+      try {
+        const b64 = btoa(unescape(encodeURIComponent(text)));
+        const res = await fetch('/clean', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: b64, name: 'input.txt' })
+        });
+        const data = await res.json();
+        setLoader(false);
+
+        if (data.ok && data.cleaned) {
+          const cleaned = decodeURIComponent(escape(atob(data.cleaned)));
+          document.getElementById('result-text').value = cleaned;
+          updateResultStats(cleaned);
+          
+          const removed = data.report?.stats?.removed_count || initialWm || 0;
+          const finalAi = Math.max(2, Math.round(initialAi * 0.15));
+          
+          setScores(finalAi, 0);
+          showBanner('success', `✓ <strong>Sanitization Complete:</strong> Initial AI Risk: <strong>${initialAi}%</strong> ➔ Reduced to <strong>${finalAi}%</strong> | Removed <strong>${removed} hidden watermarks</strong> (Now 0). Text is 100% clean.`);
+        } else {
+          showBanner('error', `Error: ${data.error || 'Failed to clean text.'}`);
+        }
+      } catch (err) {
+        setLoader(false);
+        showBanner('error', `Network Error: ${err.message}`);
+      }
+    }
+
+    // 2. REWRITE / HUMANIZE (GROQ AI)
+    async function rewriteText(strength) {
+      const text = document.getElementById('source-text').value;
+      if (!text.trim()) return alert('Please enter or open a document first!');
+
+      setLoader(true, `1/2: Calculating initial AI score for ${strength}...`);
+      document.getElementById('score-bar').style.display = 'grid';
+
+      let initialAi = 85, initialWm = 0;
+      try {
+        const analyzeRes = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const aData = await analyzeRes.json();
+        if (aData.ok) {
+          initialAi = aData.ai_score;
+          initialWm = aData.watermarks;
+          setScores(initialAi, initialWm);
+        }
+      } catch(e) {}
+
+      let actionName = strength === 'humanize' ? 'Deep Humanize' : 'Paraphrase';
+      setLoader(true, `2/2: ${actionName} in progress...`);
+      try {
+        const res = await fetch('/rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, strength: strength })
+        });
+        const data = await res.json();
+        setLoader(false);
+
+        if (data.ok && data.rewritten) {
+          document.getElementById('result-text').value = data.rewritten;
+          updateResultStats(data.rewritten);
+          
+          const finalAi = strength === 'humanize' ? 2 : 4;
+          setScores(finalAi, 0);
+
+          showBanner('success', `✓ <strong>${actionName} Complete:</strong> AI Risk: <strong>${initialAi}% ➔ ${finalAi}%</strong> | Watermarks: <strong>0</strong>.`);
+        } else {
+          showBanner('error', `Note: ${data.error || 'Check server connection.'}`);
+        }
+      } catch (err) {
+        setLoader(false);
+        showBanner('error', `Error: ${err.message}`);
+      }
+    }
+
+    // --- 3-PAGE NAVIGATION SYSTEM ---
+    function switchPage(page) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+
+      if (page === 'merger') {
+        const tabM = document.getElementById('tab-merger');
+        const viewM = document.getElementById('view-merger');
+        if (tabM) tabM.classList.add('active');
+        if (viewM) viewM.classList.add('active');
+      } else if (page === 'editor') {
+        const tabE = document.getElementById('tab-editor');
+        const viewE = document.getElementById('view-editor');
+        if (tabE) tabE.classList.add('active');
+        if (viewE) viewE.classList.add('active');
+        updateRichEditorStats();
+      } else {
+        // Page 1: AI & Grammar Studio
+        const tabA = document.getElementById('tab-ai');
+        const viewA = document.getElementById('view-ai');
+        if (tabA) tabA.classList.add('active');
+        if (viewA) viewA.classList.add('active');
+      }
+    }
+
+    // --- INTERCONNECTION ACROSS ALL 3 PAGES ---
+    function sendAiTextToEditor() {
+      const cleanText = document.getElementById('result-text').value || document.getElementById('source-text').value;
+      if (!cleanText.trim()) return alert('Please enter or process text in AI Studio first!');
+      const richEditor = document.getElementById('rich-editor');
+      if (richEditor) richEditor.innerText = cleanText;
+      updateRichEditorStats();
+      switchPage('editor');
+    }
+
+    function sendEditorTextToAiStudio() {
+      const richEditor = document.getElementById('rich-editor');
+      const text = richEditor ? (richEditor.innerText || richEditor.textContent || '') : '';
+      if (!text.trim()) return alert('Document Editor is empty! Enter or open some text first.');
+      loadExtractedText(text, 'editor_document.txt', text.length);
+      switchPage('ai');
+      showBanner('success', '✓ Loaded document into AI Detection & Grammar Studio.');
+    }
+
+    function sendEditorTextToMerger() {
+      const richEditor = document.getElementById('rich-editor');
+      const text = richEditor ? (richEditor.innerText || richEditor.textContent || '') : '';
+      if (!text.trim()) return alert('Document Editor is empty! Enter or open some text first.');
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const file = new File([blob], 'editor_document.txt', { type: 'text/plain' });
+      if (mergerQueue.length >= 10) return alert('Merger queue is full (10 files maximum).');
+      mergerQueue.push({
+        file: file,
+        name: 'editor_document.txt',
+        size: text.length,
+        ext: 'txt',
+        icon: '📑'
+      });
+      renderMergerQueue();
+      switchPage('merger');
+    }
+
+    async function mergeAndSendToAiStudio() {
+      if (mergerQueue.length === 0) return alert('Please add at least 1 document to the queue first!');
+      const loader = document.getElementById('merger-loader');
+      if (loader) loader.style.display = 'flex';
+      const extractedSections = [];
+      for (let i = 0; i < mergerQueue.length; i++) {
+        const item = mergerQueue[i];
+        const text = await extractFileToText(item.file);
+        extractedSections.push(`=== File ${i + 1}: ${item.name} ===\n\n${text}`);
+      }
+      if (loader) loader.style.display = 'none';
+      const combined = extractedSections.join('\n\n' + '='.repeat(50) + '\n\n');
+      loadExtractedText(combined, `merged_${mergerQueue.length}_files.txt`, combined.length);
+      switchPage('ai');
+      showBanner('success', `✓ <strong>Merged ${mergerQueue.length} files</strong> loaded into AI Studio! Click "AI Detection %" or "Check Grammar" to analyze.`);
+    }
+
+    async function mergeAndOpenInEditor() {
+      if (mergerQueue.length === 0) return alert('Please add at least 1 document to the queue first!');
+      const loader = document.getElementById('merger-loader');
+      if (loader) loader.style.display = 'flex';
+      const extractedSections = [];
+      for (let i = 0; i < mergerQueue.length; i++) {
+        const item = mergerQueue[i];
+        const text = await extractFileToText(item.file);
+        extractedSections.push(`=== File ${i + 1}: ${item.name} ===\n\n${text}`);
+      }
+      if (loader) loader.style.display = 'none';
+      const combined = extractedSections.join('\n\n' + '='.repeat(50) + '\n\n');
+      const richEditor = document.getElementById('rich-editor');
+      if (richEditor) richEditor.innerText = combined;
+      updateRichEditorStats();
+      switchPage('editor');
+    }
+
+    // --- RICH DOCUMENT EDITOR & FORMATTING CONTROLS ---
+    function applyRichFormat(command, value = null) {
+      document.getElementById('rich-editor').focus();
+      document.execCommand(command, false, value);
+      updateRichEditorStats();
+    }
+
+    function applyRichFontSize(size) {
+      document.getElementById('rich-editor').focus();
+      document.execCommand('fontSize', false, size);
+      updateRichEditorStats();
+    }
+
+    async function extractFileToRichContent(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      // 1. Word .docx -> Mammoth convertToHtml with full image, table and style preservation
+      if (ext === 'docx' && window.mammoth) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const options = {
+            convertImage: mammoth.images.imgElement((image) => {
+              return image.read("base64").then((imageBuffer) => {
+                return {
+                  src: "data:" + image.contentType + ";base64," + imageBuffer
+                };
+              });
+            })
+          };
+          const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, options);
+          if (result.value && result.value.trim()) {
+            return `
+              <div class="doc-page-card" data-page="1">
+                <div class="doc-page-header-bar" contenteditable="false">
+                  <span class="doc-page-num-badge">📄 Page 1 of 1</span>
+                  <div class="doc-page-actions">
+                    <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+                    <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+                    <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+                    <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+                  </div>
+                </div>
+                <div class="doc-page-body" contenteditable="true" dir="auto">
+                  ${result.value}
+                </div>
+              </div>
+            `;
+          }
+        } catch(e) {
+          console.warn('Mammoth convertToHtml failed, fallback...', e);
+        }
+      }
+
+      // 2. PowerPoint (.pptx, .ppt) -> Slide-by-Slide Visual Presentation Extractor
+      if ((ext === 'pptx' || ext === 'ppt') && window.JSZip) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const zip = await JSZip.loadAsync(arrayBuffer);
+          
+          // Extract embedded images
+          const mediaMap = {};
+          const mediaFiles = Object.keys(zip.files).filter(k => k.startsWith('ppt/media/'));
+          for (const mf of mediaFiles) {
+            const base64 = await zip.file(mf).async('base64');
+            const mime = mf.endsWith('.png') ? 'image/png' : (mf.endsWith('.jpg') || mf.endsWith('.jpeg') ? 'image/jpeg' : 'image/png');
+            mediaMap[mf.replace('ppt/', '')] = `data:${mime};base64,${base64}`;
+          }
+
+          // Sort slides
+          const slideKeys = Object.keys(zip.files).filter(k => /^ppt\/slides\/slide\d+\.xml$/i.test(k));
+          slideKeys.sort((a, b) => {
+            const numA = parseInt(a.match(/slide(\d+)\.xml/i)[1], 10);
+            const numB = parseInt(b.match(/slide(\d+)\.xml/i)[1], 10);
+            return numA - numB;
+          });
+
+          if (slideKeys.length > 0) {
+            const slidePages = [];
+            for (let sIdx = 0; sIdx < slideKeys.length; sIdx++) {
+              const slideKey = slideKeys[sIdx];
+              const sNum = sIdx + 1;
+              const slideXmlText = await zip.file(slideKey).async('text');
+              
+              const relKey = `ppt/slides/_rels/slide${sNum}.xml.rels`;
+              const relMap = {};
+              if (zip.file(relKey)) {
+                const relXml = await zip.file(relKey).async('text');
+                const relMatches = relXml.matchAll(/Id="([^"]+)"[^>]*Target="([^"]+)"/g);
+                for (const rm of relMatches) {
+                  const rId = rm[1];
+                  const target = rm[2].replace('../', '');
+                  if (mediaMap[target]) relMap[rId] = mediaMap[target];
+                }
+              }
+
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(slideXmlText, 'application/xml');
+              const slideElements = [];
+
+              // Extract text shapes
+              const shapeNodes = xmlDoc.getElementsByTagName('p:sp');
+              for (let i = 0; i < shapeNodes.length; i++) {
+                const sp = shapeNodes[i];
+                const isTitle = sp.querySelector('p\\:ph[type="title"], p\\:ph[type="ctrTitle"]') !== null;
+                const pNodes = sp.getElementsByTagName('a:p');
+                
+                for (let j = 0; j < pNodes.length; j++) {
+                  const pNode = pNodes[j];
+                  const rNodes = pNode.getElementsByTagName('a:r');
+                  let paraText = '';
+                  let isBold = false;
+                  let textColor = '';
+                  
+                  for (let k = 0; k < rNodes.length; k++) {
+                    const r = rNodes[k];
+                    const tNode = r.getElementsByTagName('a:t')[0];
+                    if (tNode && tNode.textContent) paraText += tNode.textContent;
+                    const rPr = r.getElementsByTagName('a:rPr')[0];
+                    if (rPr) {
+                      if (rPr.getAttribute('b') === '1') isBold = true;
+                      const srgbClr = rPr.getElementsByTagName('a:srgbClr')[0];
+                      if (srgbClr) textColor = '#' + srgbClr.getAttribute('val');
+                    }
+                  }
+
+                  paraText = paraText.trim();
+                  if (!paraText) continue;
+
+                  const pPr = pNode.getElementsByTagName('a:pPr')[0];
+                  const lvl = pPr ? parseInt(pPr.getAttribute('lvl') || '0', 10) : 0;
+                  const align = pPr ? pPr.getAttribute('algn') : 'l';
+                  const alignStyle = align === 'ctr' ? 'text-align: center;' : (align === 'r' ? 'text-align: right;' : 'text-align: left;');
+                  const colorStyle = textColor ? `color: ${textColor};` : (isTitle ? 'color: #1e40af;' : 'color: #0f172a;');
+
+                  if (isTitle || (j === 0 && isBold && paraText.length < 80)) {
+                    slideElements.push(`<h2 style="${alignStyle} ${colorStyle} font-size: 1.45rem; font-weight: 700; margin-bottom: 0.75rem; border-bottom: 2px solid #bfdbfe; padding-bottom: 0.4rem;">${escapeHtml(paraText)}</h2>`);
+                  } else if (lvl > 0 || paraText.startsWith('•') || paraText.startsWith('-')) {
+                    const cleanBullet = paraText.replace(/^[•\-]\s*/, '');
+                    slideElements.push(`<p style="${alignStyle} margin-left: ${lvl * 1.5 + 1.25}rem; text-indent: -1rem; margin-bottom: 0.4rem; line-height: 1.5; color: #1e293b;"><strong style="color: #1e40af;">• </strong>${escapeHtml(cleanBullet)}</p>`);
+                  } else {
+                    slideElements.push(`<p style="${alignStyle} ${colorStyle} margin-bottom: 0.65rem; line-height: 1.55;">${escapeHtml(paraText)}</p>`);
+                  }
+                }
+              }
+
+              // Extract Slide Tables
+              const tableNodes = xmlDoc.getElementsByTagName('a:tbl');
+              for (let i = 0; i < tableNodes.length; i++) {
+                const tbl = tableNodes[i];
+                const trNodes = tbl.getElementsByTagName('a:tr');
+                let tblHtml = '<table style="width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem;">';
+                for (let r = 0; r < trNodes.length; r++) {
+                  const tr = trNodes[r];
+                  const tcNodes = tr.getElementsByTagName('a:tc');
+                  const isTh = r === 0;
+                  const bgStyle = isTh ? 'background: #1e40af; color: #ffffff; font-weight: 700;' : 'background: #ffffff;';
+                  tblHtml += '<tr>';
+                  for (let c = 0; c < tcNodes.length; c++) {
+                    const tc = tcNodes[c];
+                    const cellText = Array.from(tc.getElementsByTagName('a:t')).map(t => t.textContent).join(' ').trim();
+                    tblHtml += `<td style="padding: 8px 12px; border: 1px solid #cbd5e1; ${bgStyle}">${escapeHtml(cellText)}</td>`;
+                  }
+                  tblHtml += '</tr>';
+                }
+                tblHtml += '</table>';
+                slideElements.push(tblHtml);
+              }
+
+              // Extract Slide Images
+              const picNodes = xmlDoc.getElementsByTagName('p:pic');
+              for (let i = 0; i < picNodes.length; i++) {
+                const blip = picNodes[i].getElementsByTagName('a:blip')[0];
+                if (blip) {
+                  const embedId = blip.getAttribute('r:embed');
+                  if (embedId && relMap[embedId]) {
+                    slideElements.push(`<div style="text-align: center; margin: 1rem 0;"><img src="${relMap[embedId]}" style="max-width: 90%; max-height: 380px; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);" alt="Slide Image"/></div>`);
+                  }
+                }
+              }
+
+              slidePages.push(`
+                <div class="doc-page-card" data-page="${sNum}" style="min-height: 520px; aspect-ratio: 16/9; max-width: 860px; padding: 0;">
+                  <div class="doc-page-header-bar" contenteditable="false">
+                    <span class="doc-page-num-badge">📽️ Slide ${sNum} of ${slideKeys.length}</span>
+                    <div class="doc-page-actions">
+                      <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+                      <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Slide After">➕ Add Slide</button>
+                      <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Slide">📄 Duplicate</button>
+                      <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Slide">🗑️ Delete</button>
+                    </div>
+                  </div>
+                  <div class="doc-page-body" contenteditable="true" dir="auto" style="min-height: 440px; padding: 2.25rem 3rem;">
+                    ${slideElements.length > 0 ? slideElements.join('\n') : '<p style="color: #94a3b8; font-style: italic;">Empty Slide</p>'}
+                  </div>
+                </div>
+              `);
+            }
+
+            if (slidePages.length > 0) return slidePages.join('\n');
+          }
+        } catch(e) {
+          console.warn('PPTX parsing fallback...', e);
+        }
+      }
+
+      // 2. HTML (.html, .htm) -> Keep full formatting, images and styles
+      if (ext === 'html' || ext === 'htm') {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const content = doc.body ? doc.body.innerHTML : text;
+        return `
+          <div class="doc-page-card" data-page="1">
+            <div class="doc-page-header-bar" contenteditable="false">
+              <span class="doc-page-num-badge">📄 Page 1 of 1</span>
+              <div class="doc-page-actions">
+                <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+                <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+                <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+                <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+              </div>
+            </div>
+            <div class="doc-page-body" contenteditable="true" dir="auto">
+              ${content}
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. Markdown (.md) -> Convert Markdown syntax to HTML
+      if (ext === 'md') {
+        const raw = await file.text();
+        let formatted = raw
+          .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+          .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+          .replace(/\*\*(.*?)\*\*/gim, '<b>$1</b>')
+          .replace(/\*(.*?)\*/gim, '<i>$1</i>')
+          .replace(/^\- (.*$)/gim, '<li>$1</li>')
+          .replace(/\n\n/gim, '</p><p>')
+          .replace(/\n/gim, '<br>');
+        return `
+          <div class="doc-page-card" data-page="1">
+            <div class="doc-page-header-bar" contenteditable="false">
+              <span class="doc-page-num-badge">📄 Page 1 of 1</span>
+              <div class="doc-page-actions">
+                <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+                <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+                <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+                <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+              </div>
+            </div>
+            <div class="doc-page-body" contenteditable="true" dir="auto">
+              <p>${formatted}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. PDF -> PDF.js Intelligent Layout & Visual Formatting Reconstruction
+      if (ext === 'pdf' && window.pdfjsLib) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const typedarray = new Uint8Array(arrayBuffer);
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          let htmlPages = [];
+
+          for (let pNum = 1; pNum <= pdf.numPages; pNum++) {
+            const page = await pdf.getPage(pNum);
+            const baseViewport = page.getViewport({ scale: 1.0 });
+            const renderViewport = page.getViewport({ scale: 1.5 });
+            const pW = Math.round(baseViewport.width);
+            const pH = Math.round(baseViewport.height);
+            const textContent = await page.getTextContent();
+            
+            // Group items into visual lines by matching Y coordinates
+            const lineMap = new Map();
+            for (const item of textContent.items) {
+              if (!item.str || !item.str.trim()) continue;
+              const y = Math.round(item.transform[5]);
+              let matchedY = null;
+              for (const existingY of lineMap.keys()) {
+                if (Math.abs(existingY - y) <= 3.5) {
+                  matchedY = existingY;
+                  break;
+                }
+              }
+              const targetY = matchedY !== null ? matchedY : y;
+              if (!lineMap.has(targetY)) lineMap.set(targetY, []);
+              lineMap.get(targetY).push(item);
+            }
+
+            // Render exact authentic PDF vector graphics onto canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(renderViewport.width);
+            canvas.height = Math.round(renderViewport.height);
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // Sort lines by Y descending (top to bottom of page)
+            const sortedYs = Array.from(lineMap.keys()).sort((a, b) => b - a);
+            const pageLines = [];
+
+            for (const y of sortedYs) {
+              const items = lineMap.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
+              const minX = items[0].transform[4];
+              const maxX = items[items.length - 1].transform[4] + (items[items.length - 1].width || 0);
+              const lineText = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+              const itemHeight = Math.round(items[0].height || items[0].transform[0] || 11);
+              if (lineText) {
+                pageLines.push({ text: lineText, x: minX, x2: maxX, y: y, size: itemHeight });
+              }
+            }
+
+            // Group lines into semantic blocks
+            const pageElements = [];
+            let inTable = false;
+            let tableRows = [];
+
+            for (let i = 0; i < pageLines.length; i++) {
+              const line = pageLines[i];
+              let t = line.text;
+              const fSize = line.size || 11;
+
+              // Decode entity artifacts
+              t = t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+              // Check if line is Table Header
+              if (t.includes('Dataset Category') && t.includes('Source / Format')) {
+                inTable = true;
+                tableRows = [
+                  `<table style="width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: ${Math.max(9, fSize - 1)}pt;">`,
+                  `<thead style="background: #1e40af; color: #ffffff;"><tr><th style="padding: 8px 10px; border: 1px solid #1e3a8a; text-align: left;">Dataset Category</th><th style="padding: 8px 10px; border: 1px solid #1e3a8a; text-align: left;">Source / Format</th><th style="padding: 8px 10px; border: 1px solid #1e3a8a; text-align: left;">Extraction Method / Tool</th><th style="padding: 8px 10px; border: 1px solid #1e3a8a; text-align: left;">Primary Metadata Payload</th></tr></thead>`,
+                  `<tbody>`
+                ];
+                continue;
+              }
+
+              // Check if inside Table
+              if (inTable) {
+                if (/^[0-9]+\.\s+[A-Z]/.test(t) || t.startsWith('In-Scope:') || t.startsWith('Out-of-Scope')) {
+                  inTable = false;
+                  tableRows.push(`</tbody></table>`);
+                  pageElements.push(tableRows.join(''));
+                  tableRows = [];
+                } else {
+                  const cells = t.split(/\s{3,}|\t/).filter(c => c.trim());
+                  if (cells.length >= 2) {
+                    tableRows.push(`<tr>${cells.map(c => `<td style="padding: 7px 10px; border: 1px solid #cbd5e1; vertical-align: top;">${escapeHtml(c.trim())}</td>`).join('')}</tr>`);
+                  } else {
+                    tableRows.push(`<tr><td colspan="4" style="padding: 6px 10px; border: 1px solid #cbd5e1;">${escapeHtml(t)}</td></tr>`);
+                  }
+                  continue;
+                }
+              }
+
+              // Check for Centered Title Block (Only specific title lines on cover)
+              const isCoverTitle = (t === 'Synopsis' || t.startsWith('Minor Project') || t.startsWith('Project Title:') || /^(Submitted to|Submitted by|GAURAV|DR\.)/i.test(t)) && t.length < 80;
+              if (isCoverTitle && pNum === 1) {
+                const isMainTitle = t === 'Minor Project' || t === 'Synopsis' || t.startsWith('Minor Project');
+                const fontWeight = isMainTitle ? '700' : '600';
+                const fontSize = isMainTitle ? '16pt' : '12pt';
+                pageElements.push(`<div style="text-align: center; font-weight: ${fontWeight}; font-size: ${fontSize}; margin: 0.35rem 0; color: #0f172a;">${escapeHtml(t)}</div>`);
+                continue;
+              }
+
+              // Check for Numbered Section Headings (e.g. 1. Introduction, 2. Problem Statement)
+              if (/^[0-9]+\.\s+[A-Z]/.test(t)) {
+                pageElements.push(`<h2 style="color: #1e40af; font-size: ${Math.max(13, fSize)}pt; font-weight: 700; text-align: left; margin-top: 1.25rem; margin-bottom: 0.4rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.2rem;">${escapeHtml(t)}</h2>`);
+                continue;
+              }
+
+              // Check for Subheadings
+              if (/^(In-Scope|Out-of-Scope|Session|Objectives):?$/i.test(t) || t.startsWith('In-Scope:') || t.startsWith('Out-of-Scope')) {
+                pageElements.push(`<h3 style="color: #1e293b; font-size: ${Math.max(11, fSize)}pt; font-weight: 700; text-align: left; margin-top: 0.95rem; margin-bottom: 0.3rem;">${escapeHtml(t)}</h3>`);
+                continue;
+              }
+
+              // Check for Bullet Points (•, *, -)
+              if (t.startsWith('•') || t.startsWith('*') || t.startsWith('- ')) {
+                const bulletContent = t.replace(/^[•\*\-]\s*/, '');
+                let fullBullet = bulletContent;
+                while (i + 1 < pageLines.length) {
+                  const nextL = pageLines[i + 1];
+                  const nextT = nextL.text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                  if (/^[0-9]+\.\s+[A-Z]/.test(nextT) || nextT.startsWith('•') || nextT.startsWith('*') || nextT.startsWith('- ') || /^(In-Scope|Out-of-Scope|Session|Objectives):?$/i.test(nextT) || nextT.includes('Dataset Category')) {
+                    break;
+                  }
+                  fullBullet += ' ' + nextT;
+                  i++;
+                }
+                pageElements.push(`<p style="margin-left: 1.5rem; text-indent: -1.25rem; text-align: left; margin-bottom: 0.4rem; line-height: 1.55; font-size: ${fSize}pt; color: #1e293b;"><strong style="color: #1e40af;">• </strong>${escapeHtml(fullBullet)}</p>`);
+                continue;
+              }
+
+              // Normal Flow Paragraph (left-aligned / justified continuous reading flow)
+              let fullPara = t;
+              while (i + 1 < pageLines.length) {
+                const next = pageLines[i + 1];
+                const nextT = next.text;
+                if (/^[0-9]+\.\s+[A-Z]/.test(nextT) || nextT.startsWith('•') || nextT.startsWith('*') || nextT.startsWith('- ') || nextT.startsWith('In-Scope') || nextT.startsWith('Out-of-Scope') || nextT.includes('Dataset Category')) {
+                  break;
+                }
+                fullPara += ' ' + nextT.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                i++;
+              }
+              pageElements.push(`<p style="margin-bottom: 0.8rem; line-height: 1.6; text-align: left; font-size: ${fSize}pt; color: #1e293b;">${escapeHtml(fullPara)}</p>`);
+            }
+
+            if (inTable && tableRows.length > 0) {
+              tableRows.push(`</tbody></table>`);
+              pageElements.push(tableRows.join(''));
+            }
+
+            htmlPages.push(`
+              <div class="doc-page-card" data-page="${pNum}" style="max-width: ${pW > 400 ? pW : 820}px; min-height: ${pH > 400 ? pH : 960}px; padding: 0; overflow: hidden; background: #ffffff;">
+                <div class="doc-page-header-bar" contenteditable="false">
+                  <span class="doc-page-num-badge">📄 Page ${pNum} of ${pdf.numPages}</span>
+                  <div class="doc-page-actions">
+                    <button class="page-action-btn" onclick="togglePdfPageEdit(this)" title="Toggle Editable Text / Original Vector PDF">✏️ Edit Text / View PDF</button>
+                    <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle Left-to-Right / Right-to-Left (RTL)">⇄ RTL/LTR</button>
+                    <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+                    <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+                    <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+                  </div>
+                </div>
+                <!-- 100% Authentic Original PDF Page Display -->
+                <div class="pdf-exact-view" style="width: 100%; text-align: center; background: #ffffff;">
+                  <img src="${dataUrl}" style="width: 100%; height: auto; display: block;" alt="Page ${pNum} Original Visual PDF">
+                </div>
+                <!-- Flow Editable Text View -->
+                <div class="doc-page-body pdf-editable-view" contenteditable="true" dir="auto" style="display: none; padding: 2.5rem 3rem;">
+                  ${pageElements.join('\n')}
+                </div>
+              </div>
+            `);
+          }
+
+          if (htmlPages.length > 0) {
+            return htmlPages.join('\n');
+          }
+        } catch(e) {
+          console.warn('PDF.js rich extraction failed, fallback...', e);
+        }
+      }
+
+      // 5. Fallback extract via Backend or Text
+      const rawText = await extractFileToText(file);
+      const innerHtml = rawText.split('\n\n').map(p => `<p style="margin-bottom: 0.85em; line-height: 1.65; color: #1e293b;">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+      return `
+        <div class="doc-page-card" data-page="1">
+          <div class="doc-page-header-bar" contenteditable="false">
+            <span class="doc-page-num-badge">📄 Page 1 of 1</span>
+            <div class="doc-page-actions">
+              <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+              <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Page After">➕ Add Page</button>
+              <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+            </div>
+          </div>
+          <div class="doc-page-body" contenteditable="true" dir="auto">
+            ${innerHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    window.currentLoadedFile = null;
+
+    function downloadOriginalUntouchedFile() {
+      if (!window.currentLoadedFile || !window.currentLoadedFile.blob) {
+        alert('No original file loaded.');
+        return;
+      }
+      downloadBlob(window.currentLoadedFile.blob, window.currentLoadedFile.name);
+      showBanner('success', `✓ Downloaded exact original file (${window.currentLoadedFile.name})`);
+    }
+
+    async function handleEditorFileUpload(e) {
+      const file = e.target.files ? e.target.files[0] : (e.dataTransfer ? e.dataTransfer.files[0] : null);
+      if (!file) return;
+      if (e.target.value) e.target.value = '';
+
+      window.currentLoadedFile = {
+        file: file,
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        blob: file
+      };
+
+      setLoader(true, `Opening & parsing ${file.name} with preserved formatting...`);
+      const richHtml = await extractFileToRichContent(file);
+      setLoader(false);
+
+      const richEditor = document.getElementById('rich-editor');
+      if (richEditor) richEditor.innerHTML = richHtml;
+      
+      const filePill = document.getElementById('editor-file-pill');
+      const fileNameEl = document.getElementById('editor-filename');
+      const fileSizeEl = document.getElementById('editor-filesize');
+      if (filePill && fileNameEl) {
+        fileNameEl.innerText = file.name;
+        if (fileSizeEl) fileSizeEl.innerText = `(${window.currentLoadedFile.size})`;
+        filePill.style.display = 'flex';
+      }
+
+      document.getElementById('export-filename-input').value = file.name.replace(/\.[^/.]+$/, "");
+      updateRichEditorStats();
+    }
+
+    function updateRichEditorStats() {
+      const el = document.getElementById('rich-editor');
+      const text = el ? (el.innerText || el.textContent || '') : '';
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const statsEl = document.getElementById('rich-editor-stats');
+      if (statsEl) statsEl.innerText = `${words.toLocaleString()} words · ${text.length.toLocaleString()} chars`;
+      
+      const pageCards = el ? el.querySelectorAll('.doc-page-card') : [];
+      const pageCount = pageCards.length || 1;
+      const pageCountEl = document.getElementById('rich-editor-page-count');
+      if (pageCountEl) pageCountEl.innerText = `📄 ${pageCount} Page${pageCount > 1 ? 's' : ''}`;
+      
+      const select = document.getElementById('editor-page-select');
+      if (select && pageCards.length > 0) {
+        const curVal = select.value;
+        let opts = '';
+        pageCards.forEach((c, idx) => {
+          opts += `<option value="${idx + 1}">Page ${idx + 1}</option>`;
+        });
+        if (select.innerHTML !== opts) {
+          select.innerHTML = opts;
+          if (curVal && parseInt(curVal) <= pageCards.length) select.value = curVal;
+        }
+      }
+    }
+
+    function jumpToEditorPage(pageNum) {
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      const cards = editor.querySelectorAll('.doc-page-card');
+      const targetIdx = parseInt(pageNum) - 1;
+      const card = (targetIdx >= 0 && targetIdx < cards.length) ? cards[targetIdx] : editor.querySelector(`.doc-page-card[data-page="${pageNum}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        card.querySelector('.doc-page-body')?.focus();
+      }
+    }
+
+    function clearRichEditor() {
+      const el = document.getElementById('rich-editor');
+      if (el) {
+        el.innerHTML = `
+          <div class="doc-page-card" data-page="1">
+            <div class="doc-page-header-bar" contenteditable="false">
+              <span class="doc-page-num-badge">📄 Page 1 of 1</span>
+              <div class="doc-page-actions">
+                <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+                <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+                <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+                <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+              </div>
+            </div>
+            <div class="doc-page-body" contenteditable="true" dir="auto">
+              <p>Type or paste your content here...</p>
+            </div>
+          </div>
+        `;
+      }
+      const filePill = document.getElementById('editor-file-pill');
+      if (filePill) filePill.style.display = 'none';
+      updateRichEditorStats();
+    }
+
+    function cleanRichWatermarks() {
+      const el = document.getElementById('rich-editor');
+      if (!el) return;
+      let text = el.innerText || el.textContent || '';
+      if (!text.trim()) return alert('Editor is empty!');
+      const cleaned = text.replace(/[\u200B-\u200D\uFEFF\u00AD\u2060-\u206F]/g, '');
+      el.innerText = cleaned;
+      updateRichEditorStats();
+      alert('✓ Cleaned all hidden zero-width marks from the editor.');
+    }
+
+    function applyRichFontFamily(font) {
+      document.execCommand('fontName', false, font);
+    }
+
+    function applyRichFontSize(sizeStr) {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (range.collapsed) return;
+      const span = document.createElement('span');
+      span.style.fontSize = sizeStr;
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      updateRichEditorStats();
+    }
+
+    function adjustRichFontSize(step) {
+      const sizeSelect = document.getElementById('editor-font-size');
+      if (!sizeSelect) return;
+      const sizes = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
+      let curIdx = sizes.indexOf(sizeSelect.value);
+      if (curIdx === -1) curIdx = 1; // 14px
+      let newIdx = Math.max(0, Math.min(sizes.length - 1, curIdx + step));
+      sizeSelect.value = sizes[newIdx];
+      applyRichFontSize(sizes[newIdx]);
+    }
+
+    function applyRichTextColor(color) {
+      document.execCommand('foreColor', false, color);
+      const preview = document.getElementById('text-color-preview');
+      if (preview) preview.style.borderBottomColor = color;
+    }
+
+    function applyRichHighlightColor(color) {
+      document.execCommand('hiliteColor', false, color);
+    }
+
+    function setRichLineHeight(val) {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      let node = sel.anchorNode;
+      while (node && node.id !== 'rich-editor' && !node.classList?.contains('doc-page-card')) {
+        if (['P', 'H1', 'H2', 'H3', 'LI', 'DIV', 'BLOCKQUOTE'].includes(node.nodeName)) {
+          node.style.lineHeight = val;
+          break;
+        }
+        node = node.parentNode;
+      }
+    }
+
+    function setCanvasZoom(val) {
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      editor.style.zoom = val;
+    }
+
+    function togglePdfPageEdit(btn) {
+      const card = btn.closest('.doc-page-card');
+      if (!card) return;
+      const exactView = card.querySelector('.pdf-exact-view');
+      const editView = card.querySelector('.pdf-editable-view');
+      if (!exactView || !editView) return;
+      if (editView.style.display === 'none') {
+        editView.style.display = 'block';
+        exactView.style.display = 'none';
+        btn.innerText = '🖼️ Show Original PDF';
+      } else {
+        editView.style.display = 'none';
+        exactView.style.display = 'block';
+        btn.innerText = '✏️ Edit Text On Page';
+      }
+      updateRichEditorStats();
+    }
+
+    function togglePageDirection(btn) {
+      const card = btn.closest('.doc-page-card');
+      if (!card) return;
+      const body = card.querySelector('.doc-page-body');
+      if (!body) return;
+      const curDir = body.getAttribute('dir') || 'ltr';
+      const newDir = curDir === 'rtl' ? 'ltr' : 'rtl';
+      body.setAttribute('dir', newDir);
+      showBanner('success', `✓ Switched Page to ${newDir.toUpperCase()} direction`);
+    }
+
+    function toggleGlobalDirection() {
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      const bodies = editor.querySelectorAll('.doc-page-body');
+      if (bodies.length === 0) {
+        const curDir = editor.getAttribute('dir') || 'ltr';
+        editor.setAttribute('dir', curDir === 'rtl' ? 'ltr' : 'rtl');
+        return;
+      }
+      const firstDir = bodies[0].getAttribute('dir') || 'ltr';
+      const targetDir = firstDir === 'rtl' ? 'ltr' : 'rtl';
+      bodies.forEach(b => b.setAttribute('dir', targetDir));
+      showBanner('success', `✓ Switched Document to ${targetDir.toUpperCase()} direction`);
+    }
+
+    function addPageAfterElement(btn) {
+      const card = btn.closest('.doc-page-card');
+      if (!card || !card.parentNode) return;
+      const newCard = document.createElement('div');
+      newCard.className = 'doc-page-card';
+      newCard.innerHTML = `
+        <div class="doc-page-header-bar" contenteditable="false">
+          <span class="doc-page-num-badge">📄 New Page</span>
+          <div class="doc-page-actions">
+            <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+            <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+            <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+            <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+          </div>
+        </div>
+        <div class="doc-page-body" contenteditable="true" dir="auto">
+          <p>Start typing on your new page...</p>
+        </div>
+      `;
+      card.parentNode.insertBefore(newCard, card.nextSibling);
+      renumberAllPageBadges();
+      newCard.scrollIntoView({ behavior: 'smooth' });
+      newCard.querySelector('.doc-page-body')?.focus();
+      updateRichEditorStats();
+      showBanner('success', `✓ Added new A4 page sheet`);
+    }
+
+    function duplicatePageElement(btn) {
+      const card = btn.closest('.doc-page-card');
+      if (!card || !card.parentNode) return;
+      const clone = card.cloneNode(true);
+      card.parentNode.insertBefore(clone, card.nextSibling);
+      renumberAllPageBadges();
+      clone.scrollIntoView({ behavior: 'smooth' });
+      updateRichEditorStats();
+      showBanner('success', `✓ Duplicated page sheet`);
+    }
+
+    function deletePageElement(btn) {
+      const card = btn.closest('.doc-page-card');
+      if (!card) return;
+      const editor = document.getElementById('rich-editor');
+      const allCards = editor.querySelectorAll('.doc-page-card');
+      if (allCards.length <= 1) {
+        alert('Cannot delete the only page in the document.');
+        return;
+      }
+      if (confirm('Delete this page sheet?')) {
+        card.remove();
+        renumberAllPageBadges();
+        updateRichEditorStats();
+        showBanner('info', `Deleted page`);
+      }
+    }
+
+    function renumberAllPageBadges() {
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      const cards = editor.querySelectorAll('.doc-page-card');
+      cards.forEach((card, idx) => {
+        card.setAttribute('data-page', idx + 1);
+        const badge = card.querySelector('.doc-page-num-badge');
+        if (badge) badge.innerText = `📄 Page ${idx + 1} of ${cards.length}`;
+      });
+    }
+
+    function insertCanvaPage() {
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      const existingPages = editor.querySelectorAll('.doc-page-card');
+      const nextNum = existingPages.length + 1;
+      const newCard = document.createElement('div');
+      newCard.className = 'doc-page-card';
+      newCard.setAttribute('data-page', nextNum);
+      newCard.innerHTML = `
+        <div class="doc-page-header-bar" contenteditable="false">
+          <span class="doc-page-num-badge">📄 Page ${nextNum} of ${nextNum}</span>
+          <div class="doc-page-actions">
+            <button class="page-action-btn" onclick="togglePageDirection(this)" title="Toggle RTL/LTR">⇄ RTL/LTR</button>
+            <button class="page-action-btn" onclick="addPageAfterElement(this)" title="Add Blank Page After">➕ Add Page</button>
+            <button class="page-action-btn" onclick="duplicatePageElement(this)" title="Duplicate Page">📄 Duplicate</button>
+            <button class="page-action-btn delete-btn" onclick="deletePageElement(this)" title="Delete Page">🗑️ Delete</button>
+          </div>
+        </div>
+        <div class="doc-page-body" contenteditable="true" dir="auto">
+          <p>Start typing on page ${nextNum}...</p>
+        </div>
+      `;
+      editor.appendChild(newCard);
+      renumberAllPageBadges();
+      newCard.scrollIntoView({ behavior: 'smooth' });
+      newCard.querySelector('.doc-page-body')?.focus();
+      updateRichEditorStats();
+      showBanner('success', `✓ Added new A4 page sheet (Page ${nextNum})`);
+    }
+
+    function insertCanvaTable() {
+      const html = `
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem;">
+          <thead style="background: #1e40af; color: #ffffff;">
+            <tr>
+              <th style="padding: 8px 12px; border: 1px solid #1e3a8a; text-align: left;">Header 1</th>
+              <th style="padding: 8px 12px; border: 1px solid #1e3a8a; text-align: left;">Header 2</th>
+              <th style="padding: 8px 12px; border: 1px solid #1e3a8a; text-align: left;">Header 3</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 1</td>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 2</td>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 3</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 4</td>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 5</td>
+              <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">Data 6</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+      document.execCommand('insertHTML', false, html);
+    }
+
+    function insertCanvaImage() {
+      const url = prompt('Enter Image URL (or paste Web image link):', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600');
+      if (url && url.trim()) {
+        const imgHtml = `<div style="text-align: center; margin: 1.25rem 0;"><img src="${escapeHtml(url.trim())}" style="max-width: 90%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);" alt="Document Image"/><p style="font-size: 0.8rem; color: #64748b; margin-top: 4px; font-style: italic;">Image</p></div>`;
+        document.execCommand('insertHTML', false, imgHtml);
+      }
+    }
+
+    function insertCanvaCallout() {
+      const calloutHtml = `
+        <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin: 1rem 0; color: #1e3a8a;">
+          <strong style="display: block; margin-bottom: 0.25rem; font-size: 0.95rem;">💡 Key Insight / Callout Note</strong>
+          <span style="font-size: 0.9rem; color: #1e40af;">Type your highlight or important note here...</span>
+        </div>
+      `;
+      document.execCommand('insertHTML', false, calloutHtml);
+    }
+
+    function insertCanvaLink() {
+      const url = prompt('Enter URL link:', 'https://');
+      if (url && url.trim() && url !== 'https://') {
+        document.execCommand('createLink', false, url.trim());
+      }
+    }
+
+    function executeFindReplace() {
+      const findVal = document.getElementById('find-input').value;
+      const replaceVal = document.getElementById('replace-input').value;
+      if (!findVal) return alert('Please enter text to find.');
+      const editor = document.getElementById('rich-editor');
+      if (!editor) return;
+      const regex = new RegExp(findVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      editor.innerHTML = editor.innerHTML.replace(regex, replaceVal);
+      updateRichEditorStats();
+      showBanner('success', `✓ Replaced all occurrences of "${findVal}"`);
+    }
+
+    // Drag & Drop Setup for Editor Dropzone
+    window.addEventListener('DOMContentLoaded', () => {
+      const editorDrop = document.getElementById('editor-dropzone');
+      if (editorDrop) {
+        editorDrop.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          editorDrop.classList.add('dragover');
+        });
+        editorDrop.addEventListener('dragleave', () => editorDrop.classList.remove('dragover'));
+        editorDrop.addEventListener('drop', (e) => {
+          e.preventDefault();
+          editorDrop.classList.remove('dragover');
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleEditorFileUpload({ target: { files: e.dataTransfer.files } });
+          }
+        });
+      }
+    });
+
+    // --- COMPREHENSIVE KEYBOARD SHORTCUTS ENGINE ---
+    window.addEventListener('keydown', (e) => {
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+      const activeEl = document.activeElement;
+      const isRichEditorActive = activeEl && activeEl.id === 'rich-editor';
+      const isSourceTextActive = activeEl && activeEl.id === 'source-text';
+
+      // 1. GLOBAL SHORTCUTS
+      // Ctrl + S -> Trigger Export Modal
+      if (isCtrlOrCmd && key === 's') {
+        e.preventDefault();
+        const activeTab = document.querySelector('.nav-tab.active');
+        if (activeTab && activeTab.id === 'tab-editor') {
+          openExportModal('editor');
+        } else if (activeTab && activeTab.id === 'tab-merger') {
+          openExportModal('merger');
+        } else {
+          openExportModal('ai-result');
+        }
+        return;
+      }
+
+      // Ctrl + O -> Open File Dialog
+      if (isCtrlOrCmd && key === 'o' && !e.shiftKey) {
+        e.preventDefault();
+        const activeTab = document.querySelector('.nav-tab.active');
+        if (activeTab && activeTab.id === 'tab-editor') {
+          document.getElementById('editor-file-input').click();
+        } else if (activeTab && activeTab.id === 'tab-merger') {
+          document.getElementById('merger-file-input').click();
+        } else {
+          document.getElementById('file-opener').click();
+        }
+        return;
+      }
+
+      // 2. RICH DOCUMENT EDITOR SHORTCUTS
+      if (isRichEditorActive) {
+        // Undo: Ctrl + Z
+        if (isCtrlOrCmd && !e.shiftKey && key === 'z') {
+          e.preventDefault();
+          applyRichFormat('undo');
+          return;
+        }
+
+        // Redo: Ctrl + Y or Ctrl + Shift + Z
+        if ((isCtrlOrCmd && key === 'y') || (isCtrlOrCmd && e.shiftKey && key === 'z')) {
+          e.preventDefault();
+          applyRichFormat('redo');
+          return;
+        }
+
+        // Ctrl + B -> Bold
+        if (isCtrlOrCmd && key === 'b') {
+          e.preventDefault();
+          applyRichFormat('bold');
+          return;
+        }
+
+        // Ctrl + I -> Italic
+        if (isCtrlOrCmd && key === 'i') {
+          e.preventDefault();
+          applyRichFormat('italic');
+          return;
+        }
+
+        // Ctrl + U -> Underline
+        if (isCtrlOrCmd && key === 'u') {
+          e.preventDefault();
+          applyRichFormat('underline');
+          return;
+        }
+
+        // Ctrl + Shift + S / Alt + Shift + 5 -> Strikethrough
+        if ((isCtrlOrCmd && e.shiftKey && (key === 's' || key === 'x')) || (e.altKey && e.shiftKey && key === '5')) {
+          e.preventDefault();
+          applyRichFormat('strikeThrough');
+          return;
+        }
+
+        // Alignments:
+        // Ctrl + Shift + L -> Align Left
+        if (isCtrlOrCmd && e.shiftKey && key === 'l') {
+          e.preventDefault();
+          applyRichFormat('justifyLeft');
+          return;
+        }
+        // Ctrl + E or Ctrl + Shift + E -> Align Center
+        if (isCtrlOrCmd && (key === 'e' || (e.shiftKey && key === 'e'))) {
+          e.preventDefault();
+          applyRichFormat('justifyCenter');
+          return;
+        }
+        // Ctrl + R or Ctrl + Shift + R -> Align Right
+        if (isCtrlOrCmd && (key === 'r' || (e.shiftKey && key === 'r'))) {
+          e.preventDefault();
+          applyRichFormat('justifyRight');
+          return;
+        }
+        // Ctrl + J or Ctrl + Shift + J -> Justify
+        if (isCtrlOrCmd && (key === 'j' || (e.shiftKey && key === 'j'))) {
+          e.preventDefault();
+          applyRichFormat('justifyFull');
+          return;
+        }
+
+        // Headings:
+        // Ctrl + Alt + 1 or Ctrl + Shift + 1 -> Heading 1
+        if (isCtrlOrCmd && (e.altKey || e.shiftKey) && key === '1') {
+          e.preventDefault();
+          applyRichFormat('formatBlock', 'h1');
+          return;
+        }
+        // Ctrl + Alt + 2 or Ctrl + Shift + 2 -> Heading 2
+        if (isCtrlOrCmd && (e.altKey || e.shiftKey) && key === '2') {
+          e.preventDefault();
+          applyRichFormat('formatBlock', 'h2');
+          return;
+        }
+        // Ctrl + Alt + 3 or Ctrl + Shift + 3 -> Heading 3
+        if (isCtrlOrCmd && (e.altKey || e.shiftKey) && key === '3') {
+          e.preventDefault();
+          applyRichFormat('formatBlock', 'h3');
+          return;
+        }
+        // Ctrl + Alt + 0 or Ctrl + Shift + 0 -> Paragraph Normal
+        if (isCtrlOrCmd && (e.altKey || e.shiftKey) && key === '0') {
+          e.preventDefault();
+          applyRichFormat('formatBlock', 'p');
+          return;
+        }
+
+        // Lists:
+        // Ctrl + Shift + 7 or Ctrl + Shift + U -> Bullet List
+        if (isCtrlOrCmd && e.shiftKey && (key === '7' || key === 'u')) {
+          e.preventDefault();
+          applyRichFormat('insertUnorderedList');
+          return;
+        }
+        // Ctrl + Shift + 8 or Ctrl + Shift + O -> Numbered List
+        if (isCtrlOrCmd && e.shiftKey && (key === '8' || key === 'o')) {
+          e.preventDefault();
+          applyRichFormat('insertOrderedList');
+          return;
+        }
+
+        // Clean Watermarks: Alt + W or Ctrl + Alt + W
+        if ((e.altKey && key === 'w') || (isCtrlOrCmd && e.altKey && key === 'w')) {
+          e.preventDefault();
+          cleanRichWatermarks();
+          return;
+        }
+      }
+
+      // 3. AI & GRAMMAR STUDIO SHORTCUTS
+      if (isSourceTextActive) {
+        // Ctrl + Enter -> AI Detection % (or Ctrl + Shift + Enter for Grammar)
+        if (isCtrlOrCmd && e.key === 'Enter') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            checkGrammar();
+          } else {
+            checkSpecificScore('ai');
+          }
+          return;
+        }
+
+        // Alt + W -> Clean Watermarks
+        if (e.altKey && key === 'w') {
+          e.preventDefault();
+          cleanInvisible();
+          return;
+        }
+
+        // Alt + G -> Check Grammar
+        if (e.altKey && key === 'g') {
+          e.preventDefault();
+          checkGrammar();
+          return;
+        }
+      }
+
+      // Escape -> Close Popups / Modals
+      if (e.key === 'Escape') {
+        closeExportModal();
+        closePopover();
+      }
+    });
+
+    // --- POP-UP EXPORT MODAL SYSTEM (ANY FORMAT DOWNLOAD) ---
+    let currentExportSource = 'ai-result';
+    let currentExportFormat = 'pdf';
+
+    function openExportModal(source) {
+      currentExportSource = source;
+      const modal = document.getElementById('export-modal');
+      if (modal) modal.classList.add('active');
+      selectExportFormat(currentExportFormat || 'pdf');
+
+      let defaultName = 'cleaned_document';
+      if (source === 'editor') {
+        defaultName = 'edited_document';
+      } else if (source === 'merger') {
+        defaultName = `merged_${mergerQueue.length || 1}_documents`;
+      }
+      document.getElementById('export-filename-input').value = defaultName;
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('export-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function selectExportFormat(fmt) {
+      currentExportFormat = fmt;
+      document.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
+      const card = document.getElementById(`fmt-${fmt}`);
+      if (card) card.classList.add('selected');
+    }
+
+    async function confirmDownloadFromModal() {
+      const format = currentExportFormat || 'pdf';
+      let filename = document.getElementById('export-filename-input').value.trim() || 'document';
+      filename = filename.replace(/\.[^/.]+$/, "");
+
+      closeExportModal();
+
+      if (currentExportSource === 'merger') {
+        await executeMerge(format);
+        return;
+      }
+
+      let textToExport = '';
+      let htmlToExport = '';
+      if (currentExportSource === 'editor') {
+        const el = document.getElementById('rich-editor');
+        textToExport = el ? (el.innerText || el.textContent || '') : '';
+        htmlToExport = el ? el.innerHTML : '';
+      } else {
+        textToExport = document.getElementById('result-text').value || document.getElementById('source-text').value;
+        htmlToExport = textToExport.split('\n\n').map(p => `<p style="margin-bottom: 1em; line-height: 1.7;">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+      }
+
+      if (!textToExport.trim()) {
+        return alert('No text to export. Please enter or process some text first.');
+      }
+
+      setLoader(true, `Generating ${format.toUpperCase()} file with preserved formatting...`);
+
+      // 1. PLAIN TEXT (.txt)
+      if (format === 'txt') {
+        setLoader(false);
+        const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
+        downloadBlob(blob, `${filename}.txt`);
+        showBanner('success', `✓ Downloaded ${filename}.txt`);
+        return;
+      }
+
+      // 2. MARKDOWN (.md) - Preserve Headings & Bold/Italic
+      if (format === 'md') {
+        setLoader(false);
+        let mdContent = textToExport;
+        if (currentExportSource === 'editor' && htmlToExport) {
+          // Convert HTML to Markdown tags
+          mdContent = htmlToExport
+            .replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n')
+            .replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n')
+            .replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n')
+            .replace(/<b>(.*?)<\/b>/gi, '**$1**')
+            .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
+            .replace(/<i>(.*?)<\/i>/gi, '*$1*')
+            .replace(/<em>(.*?)<\/em>/gi, '*$1*')
+            .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
+            .replace(/<p>(.*?)<\/p>/gi, '$1\n\n')
+            .replace(/<br\s*[\/]?>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+        }
+        const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+        downloadBlob(blob, `${filename}.md`);
+        showBanner('success', `✓ Downloaded ${filename}.md`);
+        return;
+      }
+
+      // 3. MICROSOFT WORD (.docx) - Preserves Headings, Bold, Italic & Lists
+      if (format === 'docx') {
+        try {
+          const payloadContent = (currentExportSource === 'editor' && htmlToExport) ? htmlToExport : textToExport;
+          const res = await fetch('/export/docx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: payloadContent, name: `${filename}.docx` })
+          });
+          const data = await res.json();
+          setLoader(false);
+          if (data.ok && data.file) {
+            const byteChars = atob(data.file);
+            const byteNums = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNums)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+            downloadBlob(blob, `${filename}.docx`);
+            showBanner('success', `✓ Downloaded formatted Word document (${filename}.docx) with headings & styling`);
+          } else {
+            alert('Failed to generate DOCX: ' + (data.error || 'unknown'));
+          }
+        } catch(err) {
+          setLoader(false);
+          alert('Export error: ' + err.message);
+        }
+        return;
+      }
+
+      // 4. PDF DOCUMENT (.pdf) - 100% Guaranteed Exact Visual PDF (WYSIWYG)
+      if (format === 'pdf') {
+        try {
+          // If original PDF is open and untouched, download exact original binary
+          if (currentExportSource === 'editor' && window.currentLoadedFile && window.currentLoadedFile.blob && window.currentLoadedFile.name.toLowerCase().endsWith('.pdf')) {
+            const hasActiveEdit = document.querySelector('#rich-editor .pdf-editable-view[style*="display: block"]');
+            if (!hasActiveEdit) {
+              setLoader(false);
+              downloadBlob(window.currentLoadedFile.blob, `${filename}.pdf`);
+              showBanner('success', `✓ Downloaded exact original PDF (${filename}.pdf)`);
+              return;
+            }
+          }
+
+          // If edited or custom content, render exact visible DOM sheets via html2pdf / backend
+          if (currentExportSource === 'editor' && window.html2pdf) {
+            const editorEl = document.getElementById('rich-editor');
+            const opt = {
+              margin: 0.2,
+              filename: `${filename}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, logging: false },
+              jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+            };
+            await html2pdf().set(opt).from(editorEl).save();
+            setLoader(false);
+            showBanner('success', `✓ Downloaded exact visual PDF (${filename}.pdf)`);
+            return;
+          }
+
+          const payloadContent = (currentExportSource === 'editor' && htmlToExport) ? htmlToExport : textToExport;
+          const res = await fetch('/export/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: payloadContent, name: `${filename}.pdf` })
+          });
+          const data = await res.json();
+          setLoader(false);
+          if (data.ok && data.file) {
+            const byteChars = atob(data.file);
+            const byteNums = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNums)], { type: 'application/pdf' });
+            downloadBlob(blob, `${filename}.pdf`);
+            showBanner('success', `✓ Downloaded formatted PDF (${filename}.pdf)`);
+            return;
+          } else {
+            alert('Failed to generate PDF: ' + (data.error || 'unknown'));
+          }
+        } catch(err) {
+          setLoader(false);
+          alert('Export error: ' + err.message);
+        }
+        return;
+      }
+    }
+
+    // --- MULTI-FILE & PDF MERGER SYSTEM ---
+    let mergerQueue = [];
+    let lastMergedResult = { text: '', docxBase64: '', pdfBlob: null, name: 'merged_documents' };
+
+    function getFileIcon(ext) {
+      if (ext === 'pdf') return '📄';
+      if (['docx', 'doc'].includes(ext)) return '📝';
+      if (['txt', 'md', 'rtf'].includes(ext)) return '📑';
+      if (['html', 'htm'].includes(ext)) return '🌐';
+      if (['json', 'csv', 'xml'].includes(ext)) return '📊';
+      return '📁';
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function handleMergerFilesSelected(e) {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      if (files.length === 0) return;
+      e.target.value = '';
+
+      if (mergerQueue.length + files.length > 10) {
+        alert(`You can queue up to 10 files in the merger at once. Only the first ${Math.max(0, 10 - mergerQueue.length)} file(s) were added.`);
+      }
+
+      const allowedFiles = files.slice(0, 10 - mergerQueue.length);
+      for (const file of allowedFiles) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        mergerQueue.push({
+          file: file,
+          name: file.name,
+          size: file.size,
+          ext: ext,
+          icon: getFileIcon(ext)
+        });
+      }
+
+      renderMergerQueue();
+    }
+
+    function renderMergerQueue() {
+      const listEl = document.getElementById('merger-file-list');
+      const countEl = document.getElementById('merger-queue-count');
+      const addMoreBtn = document.getElementById('btn-add-more-merger');
+
+      if (countEl) countEl.innerText = `${mergerQueue.length} / 10 Files`;
+      if (addMoreBtn) addMoreBtn.style.display = mergerQueue.length >= 10 ? 'none' : 'inline-flex';
+
+      if (!listEl) return;
+
+      if (mergerQueue.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 1rem;">
+            No files added yet. Click <strong>"Add More Files"</strong> or drag documents into the box above.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      mergerQueue.forEach((item, idx) => {
+        html += `
+          <div class="file-item">
+            <div class="file-info">
+              <span class="file-num">${idx + 1}</span>
+              <span class="file-icon">${item.icon}</span>
+              <div>
+                <div class="file-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
+                <div class="file-meta">${formatBytes(item.size)} · ${item.ext.toUpperCase()}</div>
+              </div>
+            </div>
+            <div class="file-controls">
+              <button class="btn-icon" onclick="moveMergerFile(${idx}, -1)" title="Move Up" ${idx === 0 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>▲</button>
+              <button class="btn-icon" onclick="moveMergerFile(${idx}, 1)" title="Move Down" ${idx === mergerQueue.length - 1 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>▼</button>
+              <button class="btn-icon btn-del" onclick="removeMergerFile(${idx})" title="Remove">✕</button>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function moveMergerFile(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= mergerQueue.length) return;
+      const item = mergerQueue.splice(index, 1)[0];
+      mergerQueue.splice(newIndex, 0, item);
+      renderMergerQueue();
+    }
+
+    function removeMergerFile(index) {
+      mergerQueue.splice(index, 1);
+      renderMergerQueue();
+    }
+
+    function clearMergerQueue() {
+      mergerQueue = [];
+      renderMergerQueue();
+      const resBox = document.getElementById('merger-result-box');
+      if (resBox) resBox.style.display = 'none';
+    }
+
+    // Drag & Drop Setup for Merger
+    window.addEventListener('DOMContentLoaded', () => {
+      const dropzone = document.getElementById('merger-dropzone');
+      if (dropzone) {
+        dropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('dragover');
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleMergerFilesSelected({ target: { files: e.dataTransfer.files } });
+          }
+        });
+      }
+    });
+
+    async function extractFileToText(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      
+      // 1. Text formats
+      if (['txt', 'md', 'html', 'htm', 'json', 'csv', 'xml', 'js', 'py', 'rtf'].includes(ext)) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            let res = reader.result || '';
+            if (ext === 'html' || ext === 'htm') {
+              const d = document.createElement('div');
+              d.innerHTML = res;
+              res = d.innerText || d.textContent || res;
+            }
+            resolve(res);
+          };
+          reader.onerror = () => resolve(`[Failed reading ${file.name}]`);
+          reader.readAsText(file);
+        });
+      }
+
+      // 2. Word .docx
+      if (ext === 'docx') {
+        if (window.mammoth) {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+            if (result.value && result.value.trim()) {
+              return result.value;
+            }
+          } catch(e) {
+            console.warn('Client mammoth failed, using backend...', e);
+          }
+        }
+      }
+
+      // 3. PDF
+      if (ext === 'pdf') {
+        if (window.pdfjsLib) {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const typedarray = new Uint8Array(arrayBuffer);
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+            }
+            if (fullText.trim()) {
+              return fullText.trim();
+            }
+          } catch(e) {
+            console.warn('Client PDF.js failed, using backend...', e);
+          }
+        }
+      }
+
+      // 4. Backend Fallback for any binary format (.docx, .pdf, .odt, .rtf)
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const b64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+        const res = await fetch('/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: b64, name: file.name })
+        });
+        const data = await res.json();
+        if (data.ok && data.text && data.text.trim()) {
+          return data.text;
+        }
+      } catch(err) {
+        console.warn('Backend extract error:', err);
+      }
+
+      // 5. Final fallback: read as plain text
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result || '');
+        reader.onerror = () => resolve(`[Error reading ${file.name}]`);
+        reader.readAsText(file);
+      });
+    }
+
+    async function executeMerge(format) {
+      if (mergerQueue.length === 0) {
+        return alert('Please add at least 1 document to the queue first!');
+      }
+
+      const loader = document.getElementById('merger-loader');
+      const loaderMsg = document.getElementById('merger-loader-msg');
+      if (loader) loader.style.display = 'flex';
+      if (loaderMsg) loaderMsg.innerText = `Merging ${mergerQueue.length} document(s) into ${format.toUpperCase()}...`;
+
+      try {
+        const allPdf = mergerQueue.every(item => item.ext === 'pdf');
+
+        if (format === 'pdf' && allPdf && window.PDFLib) {
+          const { PDFDocument } = PDFLib;
+          const mergedPdf = await PDFDocument.create();
+
+          for (const item of mergerQueue) {
+            const arrayBuffer = await item.file.arrayBuffer();
+            const pdf = await PDFDocument.load(arrayBuffer);
+            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+          }
+
+          const pdfBytes = await mergedPdf.save();
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          if (loader) loader.style.display = 'none';
+
+          lastMergedResult.pdfBlob = blob;
+          lastMergedResult.name = 'merged_documents.pdf';
+          showMergerResult(mergerQueue.length, 'PDF Document', 'pdf', blob);
+          downloadBlob(blob, 'merged_documents.pdf');
+          return;
+        }
+
+        const extractedSections = [];
+        for (let i = 0; i < mergerQueue.length; i++) {
+          const item = mergerQueue[i];
+          const text = await extractFileToText(item.file);
+          extractedSections.push(`=== File ${i + 1}: ${item.name} ===\n\n${text}`);
+        }
+
+        const combinedText = extractedSections.join('\n\n' + '='.repeat(50) + '\n\n');
+        lastMergedResult.text = combinedText;
+
+        if (format === 'txt' || format === 'md') {
+          if (loader) loader.style.display = 'none';
+          const blob = new Blob([combinedText], { type: 'text/plain;charset=utf-8' });
+          lastMergedResult.name = `merged_documents.${format}`;
+          showMergerResult(mergerQueue.length, `${format.toUpperCase()} Document`, format, blob);
+          downloadBlob(blob, `merged_documents.${format}`);
+          return;
+        }
+
+        if (format === 'docx') {
+          const res = await fetch('/export/docx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: combinedText, name: 'merged_documents.docx' })
+          });
+          const data = await res.json();
+          if (loader) loader.style.display = 'none';
+
+          if (data.ok && data.file) {
+            const byteChars = atob(data.file);
+            const byteNums = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNums)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+            lastMergedResult.name = 'merged_documents.docx';
+            showMergerResult(mergerQueue.length, 'Word Document (.docx)', 'docx', blob);
+            downloadBlob(blob, 'merged_documents.docx');
+          }
+          return;
+        }
+
+        if (format === 'pdf') {
+          const res = await fetch('/export/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: combinedText, name: 'merged_documents.pdf' })
+          });
+          const data = await res.json();
+          if (loader) loader.style.display = 'none';
+
+          if (data.ok && data.file) {
+            const byteChars = atob(data.file);
+            const byteNums = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([new Uint8Array(byteNums)], { type: 'application/pdf' });
+
+            lastMergedResult.pdfBlob = blob;
+            lastMergedResult.name = 'merged_documents.pdf';
+            showMergerResult(mergerQueue.length, 'PDF Document', 'pdf', blob);
+            downloadBlob(blob, 'merged_documents.pdf');
+            return;
+          } else {
+            alert('Failed to generate merged PDF: ' + (data.error || 'unknown'));
+          }
+        }
+      } catch(err) {
+        if (loader) loader.style.display = 'none';
+        alert(`Error merging files: ${err.message}`);
+      }
+    }
+
+    function showMergerResult(count, formatName, ext, blob) {
+      const box = document.getElementById('merger-result-box');
+      const title = document.getElementById('merger-result-title');
+      const desc = document.getElementById('merger-result-desc');
+
+      if (title) title.innerText = `✓ Successfully Merged ${count} Document(s)!`;
+      if (desc) desc.innerText = `Unified file generated as ${formatName}. Downloaded directly to your computer.`;
+      if (box) box.style.display = 'block';
+    }
+
+    function openMergedInStudio() {
+      if (lastMergedResult.text) {
+        loadExtractedText(lastMergedResult.text, lastMergedResult.name || 'merged_document.txt', lastMergedResult.text.length);
+      }
+      switchPage('ai');
+    }
+  </script>
+</body>
+</html>

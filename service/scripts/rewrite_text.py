@@ -86,6 +86,17 @@ PROMPTS = {
         "Translate the following text to {ORIGINAL_LANG}. Preserve meaning; use natural "
         "phrasing. Output only the translation.\n\n---\n{TEXT}"
     ),
+    "grammar": (
+        "You are an expert grammar and copyeditor. Proofread the following text. Identify up to 10 specific grammatical mistakes, "
+        "spelling errors, punctuation issues, and phrasing improvements. Return a JSON object with this exact structure:\n"
+        "{\n"
+        '  "corrected_text": "full polished text here",\n'
+        '  "suggestions": [\n'
+        '    {"original": "exact error text", "suggestion": "corrected replacement", "type": "Grammar|Spelling|Punctuation|Clarity", "reason": "brief reason why"}\n'
+        "  ]\n"
+        "}\n"
+        "Output ONLY valid JSON.\n\n---\n{TEXT}"
+    ),
     "structural_outline": (
         "Extract a bullet outline of all claims and structure from the text "
         "(no full sentences). Output only the outline.\n\n---\n{TEXT}"
@@ -134,6 +145,41 @@ def _select_candidate(original: str, candidates: list[str]) -> tuple[str, list[f
         scores.append(score)
     best_idx = max(range(len(candidates)), key=lambda i: scores[i])
     return candidates[best_idx], scores
+
+
+AI_PHRASE_REPLACEMENTS: list[tuple[str, str]] = [
+    (r"\bdelve into\b", "explore"),
+    (r"\bin conclusion\b", "to wrap up"),
+    (r"\bit is important to note that\b", "importantly,"),
+    (r"\bmoreover\b", "also"),
+    (r"\bfurthermore\b", "plus"),
+    (r"\badditionally\b", "on top of that"),
+    (r"\ba testament to\b", "evidence of"),
+    (r"\bcrucial role\b", "key part"),
+    (r"\bsignificant strides\b", "real progress"),
+    (r"\bgame-changer\b", "major shift"),
+    (r"\btapestry of\b", "blend of"),
+    (r"\bunlock the potential\b", "open up possibilities"),
+    (r"\bseamlessly integrate\b", "work smoothly with"),
+    (r"\bvital to\b", "essential for"),
+    (r"\butilize\b", "use"),
+    (r"\butilizing\b", "using"),
+    (r"\bin order to\b", "to"),
+    (r"\bdue to the fact that\b", "because"),
+    (r"\bat this point in time\b", "now"),
+    (r"\ba wide variety of\b", "many"),
+    (r"\bin light of\b", "given"),
+    (r"\bwith regard to\b", "about"),
+]
+
+
+def local_smart_humanize(text: str) -> str:
+    """Local, offline humanizer & content rephraser."""
+    res = text
+    for pat, repl in AI_PHRASE_REPLACEMENTS:
+        res = re.sub(pat, repl, res, flags=re.IGNORECASE)
+    cleaned, _ = clean_text(res)
+    return cleaned
 
 
 def _env(name: str, default: str | None = None) -> str | None:
@@ -250,6 +296,10 @@ def build_prompt(strength: str, text: str, *, lang: str, original_lang: str) -> 
         return PROMPTS["paraphrase"].format(TEXT=text)
     if strength == "humanize":
         return PROMPTS["humanize"].format(TEXT=text)
+    if strength == "grammar":
+        return PROMPTS["grammar"].format(TEXT=text)
+    if strength == "references":
+        return PROMPTS["references"].format(TEXT=text)
     if strength == "code":
         return PROMPTS["code"].format(TEXT=text)
     if strength == "backtranslate":
@@ -273,11 +323,16 @@ def _http_json(url: str, payload: dict, headers: dict[str, str], timeout: float)
     if urlparse(url).scheme not in ("http", "https"):
         raise ValueError(f"refusing non-http(s) rewrite endpoint: {url}")
     body = json.dumps(payload).encode("utf-8")
+    req_headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        **headers,
+    }
     # S310: URL scheme is restricted to http/https just above.
     req = urllib.request.Request(  # noqa: S310
         url,
         data=body,
-        headers={"Content-Type": "application/json", **headers},
+        headers=req_headers,
         method="POST",
     )
     opener = urllib.request.build_opener(_NoRedirect())
@@ -314,30 +369,64 @@ def call_openai_compatible(
     temperature: float,
     reasoning_effort: str | None = None,
 ) -> str:
-    url = base_url.rstrip("/") + "/v1/chat/completions"
-    headers: dict[str, str] = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    payload: dict = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": temperature,
+    import time
+    clean_base = base_url.rstrip("/")
+    if clean_base.endswith("/v1"):
+        url = clean_base + "/chat/completions"
+    elif clean_base.endswith("/chat/completions"):
+        url = clean_base
+    else:
+        url = clean_base + "/v1/chat/completions"
+
+    headers: dict[str, str] = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-    if reasoning_effort:
-        payload["reasoning_effort"] = reasoning_effort
-    data = _http_json(
-        url,
-        payload,
-        headers,
-        timeout,
-    )
-    choices = data.get("choices") or []
-    if not choices:
-        raise RuntimeError(f"openai-compatible empty choices: {data!r}"[:500])
-    content = (choices[0].get("message") or {}).get("content")
-    if not content:
-        raise RuntimeError(f"openai-compatible empty content: {data!r}"[:500])
-    return str(content).strip()
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key.strip()}"
+    
+    candidate_models = [model]
+    if "groq" in base_url.lower():
+        for fallback in ("openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b", "groq/compound", "groq/compound-mini"):
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+    elif "gemini" in model.lower():
+        for fallback in ("gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"):
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+    
+    last_err = None
+    for cur_model in candidate_models:
+        for attempt in range(2):
+            payload: dict = {
+                "model": cur_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+            }
+            if reasoning_effort:
+                payload["reasoning_effort"] = reasoning_effort
+            try:
+                data = _http_json(url, payload, headers, timeout)
+                choices = data.get("choices") or []
+                if choices:
+                    content = (choices[0].get("message") or {}).get("content")
+                    if content:
+                        return str(content).strip()
+            except urllib.error.HTTPError as e:
+                err_msg = ""
+                try:
+                    err_msg = e.read().decode("utf-8")
+                except Exception:
+                    pass
+                last_err = f"Model {cur_model}: {e} - {err_msg}"
+                if e.code in (429, 503):
+                    time.sleep(1.0 * (attempt + 1))
+                    continue
+                break
+            except Exception as e:
+                last_err = e
+                time.sleep(0.5)
+                continue
+    raise RuntimeError(f"OpenAI-compatible generation error ({last_err})")
 
 
 def rewrite(
@@ -432,9 +521,14 @@ def rewrite(
     passed: bool | None = None
     for loop in range(n_loops):
         for _ in range(n_cands):
-            cand = _generate_once(
-                backend, base_url, model, api_key, prompt, timeout, temperature, reasoning_effort
-            )
+            try:
+                cand = _generate_once(
+                    backend, base_url, model, api_key, prompt, timeout, temperature, reasoning_effort
+                )
+            except Exception as e:
+                eprint(f"warning: backend {backend} failed ({e}), using local smart humanizer")
+                cand = local_smart_humanize(text)
+                info["backend_fallback"] = str(e)
             cand_stats: dict | None = None
             if layer_a_after:
                 cand, cand_stats = clean_text(cand)

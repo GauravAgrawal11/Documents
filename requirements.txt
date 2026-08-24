@@ -1,0 +1,23 @@
+# ==============================================================================
+# Watermarks Remover & Document Studio — Dependencies
+# ==============================================================================
+# The core service runs with standard library Python 3.10+ with zero required
+# third-party packages. The following packages provide optional enhancements:
+
+# Core & Networking
+requests>=2.31.0
+urllib3>=2.0.0
+
+# AI & LLM Providers (Optional for Layer B Rewrite & Studio AI Engine)
+groq>=0.9.0
+openai>=1.12.0
+anthropic>=0.18.0
+
+# Document & Presentation Processing (Optional server-side helpers)
+pypdf>=3.17.0
+python-docx>=1.1.0
+python-pptx>=0.6.23
+
+# Testing & Quality Assurance
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
