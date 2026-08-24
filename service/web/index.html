@@ -1285,12 +1285,12 @@
       width: 100%;
     }
 
-    /* SPLASH INTRO SCREEN & GLOBAL ANIMATED LOADER */
+    /* SPLASH INTRO SCREEN & GLOBAL ANIMATED LOADER (WHITE / LIGHT THEME) */
     #splash-screen {
       position: fixed;
       inset: 0;
       z-index: 99999;
-      background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+      background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1319,9 +1319,9 @@
       inset: -8px;
       border-radius: 50%;
       border: 3px solid transparent;
-      border-top-color: #38bdf8;
-      border-right-color: #818cf8;
-      border-bottom-color: #c084fc;
+      border-top-color: #0062FF;
+      border-right-color: #7c3aed;
+      border-bottom-color: #0d9488;
       animation: spinRing 2s linear infinite;
     }
 
@@ -1329,7 +1329,7 @@
       position: absolute;
       inset: -18px;
       border-radius: 50%;
-      border: 2px dashed rgba(56, 189, 248, 0.3);
+      border: 2px dashed rgba(0, 98, 255, 0.25);
       animation: spinRingRev 5s linear infinite;
     }
 
@@ -1337,7 +1337,7 @@
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(0, 98, 255, 0.15) 0%, transparent 70%);
       filter: blur(14px);
       animation: pulseGlow 2s ease-in-out infinite alternate;
     }
@@ -1347,7 +1347,7 @@
       height: 72px;
       position: relative;
       z-index: 2;
-      filter: drop-shadow(0 4px 20px rgba(56, 189, 248, 0.6));
+      filter: drop-shadow(0 4px 16px rgba(0, 98, 255, 0.35));
       animation: floatLogo 2.5s ease-in-out infinite alternate;
     }
 
@@ -1370,42 +1370,39 @@
       font-family: var(--font-heading);
       font-size: 2rem;
       font-weight: 800;
-      color: #ffffff;
+      color: #0f172a;
       letter-spacing: -0.02em;
       margin-bottom: 0.35rem;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
     .splash-title span {
-      background: linear-gradient(135deg, #38bdf8, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #0062FF;
     }
 
     .splash-tagline {
       font-size: 0.9rem;
-      color: #94a3b8;
+      color: #64748b;
       margin-bottom: 1.75rem;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       font-weight: 500;
     }
 
     .splash-progress-track {
       width: 240px;
       height: 6px;
-      background: rgba(255, 255, 255, 0.1);
+      background: #e2e8f0;
       border-radius: 99px;
       overflow: hidden;
       position: relative;
       margin-bottom: 0.85rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid #cbd5e1;
     }
 
     .splash-progress-fill {
       width: 0%;
       height: 100%;
-      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+      background: linear-gradient(90deg, #0062FF, #7c3aed);
       border-radius: 99px;
-      box-shadow: 0 0 12px #38bdf8;
+      box-shadow: 0 0 10px rgba(0, 98, 255, 0.4);
       transition: width 0.35s ease;
     }
 
@@ -1413,14 +1410,15 @@
       font-size: 0.775rem;
       color: #64748b;
       font-family: var(--font-mono);
+      font-weight: 500;
     }
 
-    /* GLOBAL COOL ANIMATED LOADER MODAL */
+    /* GLOBAL ANIMATED LOADER MODAL (LIGHT THEME) */
     #global-loader {
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.35);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -1435,9 +1433,9 @@
     }
 
     .loader-glass-card {
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.2);
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 0 0 25px rgba(0, 98, 255, 0.12);
       border-radius: 20px;
       padding: 2.25rem 2.5rem;
       display: flex;
@@ -1468,8 +1466,8 @@
       inset: 0;
       border-radius: 50%;
       border: 3px solid transparent;
-      border-top-color: #38bdf8;
-      border-right-color: #a855f7;
+      border-top-color: #0062FF;
+      border-right-color: #7c3aed;
       animation: spinRing 1s linear infinite;
     }
 
@@ -1477,7 +1475,7 @@
       position: absolute;
       inset: -6px;
       border-radius: 50%;
-      border: 2px dashed rgba(56, 189, 248, 0.4);
+      border: 2px dashed rgba(0, 98, 255, 0.3);
       animation: spinRingRev 3s linear infinite;
     }
 
@@ -1487,18 +1485,17 @@
     }
 
     .loader-msg {
-      color: #f8fafc;
+      color: #0f172a;
       font-family: var(--font-heading);
       font-size: 1.05rem;
       font-weight: 700;
       line-height: 1.4;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .loader-sub-bar {
       width: 180px;
       height: 4px;
-      background: rgba(255, 255, 255, 0.15);
+      background: #e2e8f0;
       border-radius: 99px;
       overflow: hidden;
       position: relative;
@@ -1509,7 +1506,7 @@
       position: absolute;
       top: 0; left: 0; bottom: 0;
       width: 40%;
-      background: linear-gradient(90deg, #38bdf8, #a855f7);
+      background: linear-gradient(90deg, #0062FF, #7c3aed);
       border-radius: 99px;
       animation: loaderShimmer 1.2s infinite ease-in-out;
     }
