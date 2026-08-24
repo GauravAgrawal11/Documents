@@ -5,7 +5,7 @@
 # third-party packages. The following packages provide optional enhancements:
 
 # Core & Networking
-requests>=2.31.0
+requests>=2.34.2
 urllib3>=2.0.0
 
 # AI & LLM Providers (Optional for Layer B Rewrite & Studio AI Engine)
