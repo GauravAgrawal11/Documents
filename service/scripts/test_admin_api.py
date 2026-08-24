@@ -44,7 +44,7 @@ def test_admin_api():
 
     print("\nTesting /api/admin/config update...")
     update_payload = json.dumps({
-        "groq_api_key": "gsk_test1234567890abcdefghijklmnopqrstuvwxyz",
+        "groq_api_key": "dummy_test_key_sample",
         "model": "llama-3.3-70b-versatile",
         "base_url": "https://api.groq.com/openai/v1"
     }).encode("utf-8")
