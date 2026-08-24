@@ -49,6 +49,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+# Ensure service/scripts directory is in sys.path for direct imports
+_scripts_dir = str(Path(__file__).resolve().parent)
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
+
 # Auto-load .env from repository root if present
 _env_file = Path(__file__).resolve().parent.parent.parent / ".env"
 if _env_file.exists():
@@ -1325,7 +1330,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> int:
     global API_KEY  # noqa: PLW0603 — CLI overrides env
-    default_host = os.environ.get("WATERMARKS_SERVER_HOST", "0.0.0.0" if os.environ.get("PORT") or os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RENDER") else "127.0.0.1")
+    default_host = os.environ.get("WATERMARKS_SERVER_HOST", "0.0.0.0")
     default_port = int(os.environ.get("PORT") or os.environ.get("WATERMARKS_SERVER_PORT", "8765"))
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--host", default=default_host)
