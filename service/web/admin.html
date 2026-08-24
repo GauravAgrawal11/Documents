@@ -10,27 +10,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-card: rgba(22, 30, 49, 0.75);
-      --border-card: rgba(255, 255, 255, 0.1);
-      --primary: #38bdf8;
-      --primary-hover: #0ea5e9;
-      --accent-purple: #a855f7;
-      --accent-green: #22c55e;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --primary: #0062FF;
+      --primary-hover: #0052D6;
+      --accent-purple: #7c3aed;
+      --accent-purple-hover: #6d28d9;
+      --accent-teal: #0d9488;
+      --accent-green: #16a34a;
+      --accent-red: #dc2626;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
       --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
       --font-body: 'Inter', -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
-        radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
+      background-color: var(--bg-main);
       color: var(--text-main);
       font-family: var(--font-body);
       min-height: 100vh;
@@ -39,6 +42,17 @@
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
+      position: relative;
+    }
+
+    #dot-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* LOGIN MODAL CARD */
@@ -46,13 +60,13 @@
       width: 100%;
       max-width: 440px;
       background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-card);
+      border: 1px solid var(--border-color);
       border-radius: 20px;
       padding: 2.5rem;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.15);
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0, 0, 0, 0.03);
       text-align: center;
       animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 10;
     }
 
     @keyframes popIn {
@@ -61,16 +75,16 @@
     }
 
     .brand-logo-glow {
-      width: 68px;
-      height: 68px;
+      width: 64px;
+      height: 64px;
       margin: 0 auto 1.25rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 18px;
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 98, 255, 0.12);
     }
 
     .login-title {
@@ -79,11 +93,10 @@
       font-weight: 800;
       letter-spacing: -0.02em;
       margin-bottom: 0.35rem;
+      color: var(--text-main);
     }
     .login-title span {
-      background: linear-gradient(135deg, #38bdf8, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--primary);
     }
 
     .login-subtitle {
@@ -101,7 +114,7 @@
       display: block;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-main);
       margin-bottom: 0.4rem;
       letter-spacing: 0.02em;
     }
@@ -114,21 +127,20 @@
 
     .admin-input {
       width: 100%;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border-card);
+      background: #ffffff;
+      border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 0.75rem 1rem;
-      color: #ffffff;
+      color: var(--text-main);
       font-family: var(--font-body);
-      font-size: 0.95rem;
+      font-size: 0.925rem;
       outline: none;
       transition: all 0.2s ease;
     }
 
     .admin-input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-      background: rgba(15, 23, 42, 0.85);
+      box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15);
     }
 
     .btn-toggle-eye {
@@ -144,7 +156,7 @@
 
     .btn-primary {
       width: 100%;
-      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      background: var(--primary);
       color: #ffffff;
       border: none;
       border-radius: 10px;
@@ -154,7 +166,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 98, 255, 0.25);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -162,8 +174,9 @@
     }
 
     .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 6px 16px rgba(0, 98, 255, 0.35);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
     }
 
     /* DASHBOARD VIEW */
@@ -172,6 +185,7 @@
       width: 100%;
       max-width: 860px;
       animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 10;
     }
 
     .dashboard-header {
@@ -193,16 +207,16 @@
       font-family: var(--font-heading);
       font-size: 1.4rem;
       font-weight: 800;
-      color: #ffffff;
+      color: var(--text-main);
     }
 
     .dash-status-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      color: #4ade80;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+      color: #15803d;
       padding: 0.3rem 0.65rem;
       border-radius: 99px;
       font-size: 0.75rem;
@@ -212,9 +226,9 @@
     .status-dot-pulse {
       width: 7px;
       height: 7px;
-      background: #4ade80;
+      background: #16a34a;
       border-radius: 50%;
-      box-shadow: 0 0 8px #4ade80;
+      box-shadow: 0 0 6px #16a34a;
     }
 
     .dash-actions {
@@ -224,9 +238,9 @@
     }
 
     .btn-subtle {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border-card);
-      color: var(--text-muted);
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
       border-radius: 8px;
       padding: 0.45rem 0.85rem;
       font-size: 0.8rem;
@@ -237,22 +251,21 @@
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-subtle:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.25);
+      background: #f1f5f9;
+      border-color: #cbd5e1;
     }
 
     .dash-card {
       background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-card);
+      border: 1px solid var(--border-color);
       border-radius: 16px;
       padding: 1.75rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: var(--shadow-sm);
     }
 
     .dash-card-header {
@@ -260,7 +273,7 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 1.25rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid #f1f5f9;
       padding-bottom: 0.85rem;
     }
 
@@ -268,6 +281,7 @@
       font-family: var(--font-heading);
       font-size: 1.05rem;
       font-weight: 700;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -279,8 +293,8 @@
       border-radius: 6px;
       font-weight: 700;
     }
-    .badge-active { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-    .badge-none { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-none { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
 
     .grid-2 {
       display: grid;
@@ -292,9 +306,9 @@
     }
 
     .btn-test {
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: #38bdf8;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: var(--primary);
       border-radius: 8px;
       padding: 0.5rem 0.9rem;
       font-size: 0.8rem;
@@ -306,8 +320,8 @@
       gap: 0.35rem;
     }
     .btn-test:hover {
-      background: rgba(56, 189, 248, 0.25);
-      border-color: #38bdf8;
+      background: #dbeafe;
+      border-color: var(--primary);
     }
 
     .toast-msg {
@@ -319,18 +333,21 @@
       align-items: center;
       gap: 0.5rem;
     }
-    .toast-success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
-    .toast-error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+    .toast-success { background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; }
+    .toast-error { background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; }
   </style>
 </head>
 <body>
+
+  <!-- INTERACTIVE MOUSE-REACTIVE DOT CANVAS BACKGROUND -->
+  <canvas id="dot-canvas"></canvas>
 
   <!-- ================= 1. PASSWORD AUTH GATE ================= -->
   <div id="login-view">
     <div class="brand-logo-glow">
       <svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H30C32.2091 40 34 38.2091 34 36V12L22 0H4Z" fill="#38BDF8"/>
-        <path d="M22 0L34 12H25C23.3431 12 22 10.6569 22 9V0Z" fill="#818CF8"/>
+        <path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H30C32.2091 40 34 38.2091 34 36V12L22 0H4Z" fill="#0062FF"/>
+        <path d="M22 0L34 12H25C23.3431 12 22 10.6569 22 9V0Z" fill="#5495FF"/>
         <path d="M9 22C9.8 26.5 13.5 29.5 17 29.5C20.5 29.5 24.2 26.5 25 22" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
       </svg>
     </div>
@@ -457,6 +474,73 @@
   </div>
 
   <script>
+    // --- 1. INTERACTIVE MOUSE-REACTIVE DOT CANVAS BACKGROUND ---
+    const canvas = document.getElementById('dot-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.targetX = e.clientX;
+      mouse.targetY = e.clientY;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        mouse.targetX = e.touches[0].clientX;
+        mouse.targetY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    const spacing = 28;
+    function renderDots() {
+      ctx.clearRect(0, 0, width, height);
+      mouse.x += (mouse.targetX - mouse.x) * 0.1;
+      mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+      const cols = Math.ceil(width / spacing);
+      const rows = Math.ceil(height / spacing);
+
+      for (let i = 0; i <= cols; i++) {
+        for (let j = 0; j <= rows; j++) {
+          const x = i * spacing;
+          const y = j * spacing;
+          const dx = mouse.x - x;
+          const dy = mouse.y - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxDist = 180;
+
+          let radius = 1.15;
+          let alpha = 0.22;
+          let shiftX = 0;
+          let shiftY = 0;
+
+          if (dist < maxDist) {
+            const factor = (1 - dist / maxDist);
+            radius = 1.15 + factor * 1.8;
+            alpha = 0.22 + factor * 0.45;
+            shiftX = -(dx / dist) * factor * 6;
+            shiftY = -(dy / dist) * factor * 6;
+          }
+
+          ctx.beginPath();
+          ctx.arc(x + shiftX, y + shiftY, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 98, 255, ${alpha})`;
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(renderDots);
+    }
+    renderDots();
+
+    // --- 2. ADMIN AUTH & CONFIG LOGIC ---
     let adminToken = localStorage.getItem('doc_admin_token') || '';
 
     window.addEventListener('DOMContentLoaded', () => {
