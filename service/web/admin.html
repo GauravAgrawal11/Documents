@@ -540,10 +540,14 @@
     }
     renderDots();
 
-    // --- 2. ADMIN AUTH & CONFIG LOGIC ---
-    let adminToken = localStorage.getItem('doc_admin_token') || '';
+    // --- 2. ADMIN AUTH & CONFIG LOGIC (STRICT SESSION LOCK) ---
+    let adminToken = sessionStorage.getItem('doc_admin_token') || '';
 
     window.addEventListener('DOMContentLoaded', () => {
+      // Always show login card first
+      document.getElementById('login-view').style.display = 'block';
+      document.getElementById('dashboard-view').style.display = 'none';
+
       if (adminToken) {
         loadAdminConfig();
       }
@@ -571,7 +575,8 @@
         const data = await res.json();
         if (data.ok && data.token) {
           adminToken = data.token;
-          localStorage.setItem('doc_admin_token', adminToken);
+          sessionStorage.setItem('doc_admin_token', adminToken);
+          localStorage.removeItem('doc_admin_token'); // Clear any legacy persistent tokens
           loadAdminConfig();
         } else {
           toast.className = 'toast-msg toast-error';
@@ -587,7 +592,9 @@
 
     function handleLogout() {
       adminToken = '';
+      sessionStorage.removeItem('doc_admin_token');
       localStorage.removeItem('doc_admin_token');
+      document.getElementById('admin-password-input').value = '';
       document.getElementById('dashboard-view').style.display = 'none';
       document.getElementById('login-view').style.display = 'block';
     }
