@@ -32,6 +32,7 @@
 !/pytest.ini
 !/README.md
 !/Dockerfile
+!/railway.toml
 !/requirements.txt
 !/requirements-dev.txt
 !/DEPLOYMENT.md
