@@ -9,7 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source
 COPY . .
 
-ENV PORT=8765
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/service/scripts:/app
 ENV WATERMARKS_SERVER_HOST=0.0.0.0
 
 EXPOSE 8765

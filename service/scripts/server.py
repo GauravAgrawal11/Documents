@@ -1331,7 +1331,12 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> int:
     global API_KEY  # noqa: PLW0603 — CLI overrides env
     default_host = os.environ.get("WATERMARKS_SERVER_HOST", "0.0.0.0")
-    default_port = int(os.environ.get("PORT") or os.environ.get("WATERMARKS_SERVER_PORT", "8765"))
+    env_port = os.environ.get("PORT") or os.environ.get("WATERMARKS_SERVER_PORT") or "8765"
+    try:
+        default_port = int(env_port)
+    except ValueError:
+        default_port = 8765
+
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--host", default=default_host)
     p.add_argument("--port", type=int, default=default_port)
@@ -1345,22 +1350,18 @@ def main() -> int:
 
     API_KEY = args.api_key
 
-    if args.host not in ("127.0.0.1", "localhost", "::1"):
-        eprint(f"warning: binding {args.host} — intended for a trusted network only")
-    if API_KEY:
-        eprint("API key required for requests")
-    else:
-        eprint("warning: no API key set — only bind to loopback or a trusted network")
-
     try:
         server = ThreadingHTTPServer((args.host, args.port), Handler)
     except OSError as e:
         if getattr(e, "winerror", None) == 10048 or "Address already in use" in str(e) or getattr(e, "errno", None) == 98:
             eprint(f"\n[INFO] Server is ALREADY RUNNING on http://{args.host}:{args.port}!")
-            eprint(f"You can open it now in your browser at: http://localhost:{args.port}\n")
+            sys.stderr.flush()
             return 0
         raise
-    eprint(f"watermarks-remover service {VERSION} on http://{args.host}:{args.port}")
+    
+    eprint(f"[READY] Documents Studio service {VERSION} live on http://{args.host}:{args.port}")
+    sys.stderr.flush()
+    sys.stdout.flush()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
